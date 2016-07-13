@@ -1,9 +1,10 @@
 package com.lvt4j.basic;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class TCollection {
@@ -28,29 +29,92 @@ public class TCollection {
         return true;
     }
     
-    public static class TAutoHashMap<K, V> extends HashMap<K, V>{
+    /**
+     * 自动填充map
+     * 具体map实现由构造函数参数控制
+     * 当调用get方法时，若不包含该key，
+     * 则使用构造函数的TAutoMap.ValueBuilder.build创建值并插入
+     */
+    public static class TAutoMap<K, V> implements Map<K, V>, Serializable{
         
         private static final long serialVersionUID = 1L;
         
+        private Map<K, V> map;
         private ValueBuilder<V> valueBuilder;
         
-        public TAutoHashMap(ValueBuilder<V> valueBuilder) {
+        public TAutoMap(Map<K, V> map, ValueBuilder<V> valueBuilder) {
+            this.map = map;
             this.valueBuilder = valueBuilder;
         }
 
         @Override
         public V get(Object key) {
-            V val = super.get(key);
+            V val = get(key);
             if (val==null) {
-                val = valueBuilder.build();
+                val = valueBuilder.build(key);
                 put((K) key, val);
             }
             return val;
         }
     
+        @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return map.isEmpty();
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return map.containsKey(key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return map.containsValue(value);
+        }
+
+        @Override
+        public V put(K key, V value) {
+            return map.put(key, value);
+        }
+
+        @Override
+        public V remove(Object key) {
+            return map.remove(key);
+        }
+
+        @Override
+        public void putAll(Map<? extends K, ? extends V> m) {
+            map.putAll(m);
+        }
+
+        @Override
+        public void clear() {
+            map.clear();
+        }
+
+        @Override
+        public Set<K> keySet() {
+            return map.keySet();
+        }
+
+        @Override
+        public Collection<V> values() {
+            return map.values();
+        }
+
+        @Override
+        public Set<java.util.Map.Entry<K, V>> entrySet() {
+            return map.entrySet();
+        }
+
         public interface ValueBuilder<V> {
             
-            V build();
+            V build(Object key);
             
         }
     }
