@@ -1,5 +1,9 @@
 package com.lvt4j.basic;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 
 public class TDataConvert {
@@ -143,6 +147,16 @@ public class TDataConvert {
         return sb.toString();
     }
 
+    public static Object byteS2Obj(byte[] byteS) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteS);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            return ois.readObject();
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     public static boolean[] short2BitS(short s) {
         boolean[] bitS = new boolean[16];
         for (int i = 15; i >= 0; i--) {
@@ -323,6 +337,17 @@ public class TDataConvert {
         return new String(hexStr2ByteS(hexStr), "UTF-8");
     }
 
+    public static final byte[] obj2ByteS(Object obj) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(obj);
+            return baos.toByteArray();
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     private static int digit(char c) throws Exception {
         for (int i = 0; i < lowChar.length; i++)
             if (c == lowChar[i])

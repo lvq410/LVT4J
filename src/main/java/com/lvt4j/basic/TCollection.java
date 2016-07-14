@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.NonNull;
+
 @SuppressWarnings("unchecked")
 public class TCollection {
     
@@ -42,18 +44,17 @@ public class TCollection {
         private Map<K, V> map;
         private ValueBuilder<V> valueBuilder;
         
-        public TAutoMap(Map<K, V> map, ValueBuilder<V> valueBuilder) {
+        public TAutoMap(@NonNull Map<K, V> map, @NonNull ValueBuilder<V> valueBuilder) {
             this.map = map;
             this.valueBuilder = valueBuilder;
         }
 
         @Override
         public V get(Object key) {
-            V val = get(key);
-            if (val==null) {
-                val = valueBuilder.build(key);
-                put((K) key, val);
-            }
+            V val = map.get(key);
+            if (val!=null) return val;
+            val = valueBuilder.build(key);
+            map.put((K) key, val);
             return val;
         }
     
@@ -112,6 +113,16 @@ public class TCollection {
             return map.entrySet();
         }
 
+        @Override
+        public int hashCode() {
+            return map.hashCode();
+        }
+        
+        @Override
+        public String toString() {
+            return map.toString();
+        }
+        
         public interface ValueBuilder<V> {
             
             V build(Object key);
