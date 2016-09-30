@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 
 public class TDataConvert {
 
@@ -25,18 +24,18 @@ public class TDataConvert {
         return bit ? "1" : "0";
     }
 
-    public static byte bitS2Byte(boolean[] bitS) throws Exception {
+    public static byte bitS2Byte(boolean[] bitS) {
         if (bitS.length != 8)
-            throw new Exception("Illegal bitS length<" + bitS.length + ">!=8");
+            throw new RuntimeException("Illegal bitS length<" + bitS.length + ">!=8");
         byte b = 0;
         for (int i = 0; i <= 7; i++)
             b += bitS[i] ? (1 << (7 - i)) : 0;
         return b;
     }
 
-    public static byte[] bitS2ByteS(boolean[] bitS) throws Exception {
+    public static byte[] bitS2ByteS(boolean[] bitS) {
         if (bitS.length % 8 != 0)
-            throw new Exception("Illegal bitS length<" + bitS.length + ">");
+            throw new RuntimeException("Illegal bitS length<" + bitS.length + ">");
         byte[] byteS = new byte[bitS.length / 8];
         for (int i = 0; i < byteS.length; i++) {
             boolean[] temBits = new boolean[8];
@@ -53,34 +52,38 @@ public class TDataConvert {
         return new String(cS);
     }
 
-    public static short bitS2Short(boolean[] bitS) throws Exception {
+    public static short bitS2Short(boolean[] bitS) {
         if (bitS.length != 16)
-            throw new Exception("Illegal bitS length<" + bitS.length + ">!=16.");
+            throw new RuntimeException("Illegal bitS length<" + bitS.length + ">!=16.");
         short d = 0;
         for (int i = 0; i <= 15; i++)
             d += bitS[i] ? (1 << (15 - i)) : 0;
         return d;
     }
 
-    public static int bitS2Int(boolean[] bitS) throws Exception {
+    public static int bitS2Int(boolean[] bitS) {
         if (bitS.length != 32)
-            throw new Exception("Illegal bitS length<" + bitS.length + ">!=32.");
+            throw new RuntimeException("Illegal bitS length<" + bitS.length + ">!=32.");
         int d = 0;
         for (int i = 0; i <= 31; i++)
             d += bitS[i] ? (1 << (31 - i)) : 0;
         return d;
     }
 
-    public static String bitS2Str(boolean[] bitS) throws Exception {
-        return new String(bitS2ByteS(bitS), "UTF-8");
+    public static String bitS2Str(boolean[] bitS) {
+        try {
+            return new String(bitS2ByteS(bitS), "UTF-8");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static boolean byte2Bit(byte b) throws Exception {
+    public static boolean byte2Bit(byte b) {
         if (b == 1)
             return true;
         if (b == 0)
             return false;
-        throw new Exception("Unsupported byte<" + b + ">!=[0-1].");
+        throw new RuntimeException("Unsupported byte<" + b + ">!=[0-1].");
     }
 
     public static boolean[] byte2BitS(byte b) {
@@ -106,9 +109,9 @@ public class TDataConvert {
         return bitS;
     }
 
-    public static short byteS2Short(byte[] byteS) throws Exception {
+    public static short byteS2Short(byte[] byteS) {
         if (byteS.length != 2)
-            throw new Exception("Illegal byteS length<" + byteS.length
+            throw new RuntimeException("Illegal byteS length<" + byteS.length
                     + ">!=2.");
         short d = (short) (byteS[0] & 0xFF);
         d <<= 8;
@@ -116,9 +119,9 @@ public class TDataConvert {
         return d;
     }
 
-    public static int byteS2Int(byte[] byteS) throws Exception {
+    public static int byteS2Int(byte[] byteS) {
         if (byteS.length != 4)
-            throw new Exception("Illegal byteS length<" + byteS.length
+            throw new RuntimeException("Illegal byteS length<" + byteS.length
                     + ">!=4.");
         int d = (byteS[0] & 0xFF);
         for (int i = 1; i < 4; i++) {
@@ -128,9 +131,9 @@ public class TDataConvert {
         return d;
     }
 
-    public static long byteS2Long(byte[] byteS) throws Exception {
+    public static long byteS2Long(byte[] byteS) {
         if (byteS.length != 8)
-            throw new Exception("Illegal byteS length<" + byteS.length
+            throw new RuntimeException("Illegal byteS length<" + byteS.length
                     + ">!=8.");
         long d = (byteS[0] & 0xFF);
         for (int i = 1; i < 8; i++) {
@@ -233,60 +236,56 @@ public class TDataConvert {
     public static boolean[] str2BitS(String str) {
         try {
             return byteS2BitS(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return null;
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 
     public static String str2HexStr(String str) {
         try {
             return byteS2HexStr(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return null;
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public static boolean bitChar2Bit(char bitChar) throws Exception {
+    public static boolean bitChar2Bit(char bitChar) {
         if (bitChar == '1')
             return true;
         if (bitChar == '0')
             return false;
-        throw new Exception("Illegal bitChar<" + bitChar + ">!=[0-1]");
+        throw new RuntimeException("Illegal bitChar<" + bitChar + ">!=[0-1]");
     }
 
-    public static boolean[] bitStr2BitS(String bitStr) throws Exception {
+    public static boolean[] bitStr2BitS(String bitStr) {
         boolean[] bitS = new boolean[bitStr.length()];
         for (int i = 0; i < bitS.length; i++)
             bitS[i] = bitChar2Bit(bitStr.charAt(i));
         return bitS;
     }
 
-    public static boolean bitStr2Bit(String bitStr) throws Exception {
+    public static boolean bitStr2Bit(String bitStr) {
         if (bitStr.length() != 1)
-            throw new Exception("Illegal BitStr length<" + bitStr.length()
+            throw new RuntimeException("Illegal BitStr length<" + bitStr.length()
                     + ">!=1.");
         if ("1".equals(bitStr))
             return true;
         if ("0".equals(bitStr))
             return false;
-        throw new Exception("Illegal bitStr<" + bitStr + ">!=[0-1]");
+        throw new RuntimeException("Illegal bitStr<" + bitStr + ">!=[0-1]");
     }
 
     public static byte hexStr2Byte(String hexStr) {
         if (hexStr.length() != 2)
             throw new RuntimeException("Illegal HexString length<" + hexStr.length()
                     + ">!=2.");
-        try {
-            char[] cS = hexStr.toCharArray();
-            return (byte) ((digit(cS[0]) << 4) | digit(cS[1]));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        char[] cS = hexStr.toCharArray();
+        return (byte) ((digit(cS[0]) << 4) | digit(cS[1]));
     }
 
-    public static byte[] hexStr2ByteS(String hexStr) throws Exception {
+    public static byte[] hexStr2ByteS(String hexStr) {
         if (hexStr.length() % 2 != 0)
-            throw new Exception("Illegal HexString length<" + hexStr.length()
+            throw new RuntimeException("Illegal HexString length<" + hexStr.length()
                     + ">%2!=0.");
         byte[] byteS = new byte[hexStr.length() / 2];
         for (int i = 0; i < byteS.length; i++)
@@ -294,9 +293,9 @@ public class TDataConvert {
         return byteS;
     }
 
-    public static short hexStr2Short(String hexStr) throws Exception {
+    public static short hexStr2Short(String hexStr) {
         if (hexStr.length() != 4)
-            throw new Exception("Illegal HexString length<" + hexStr.length()
+            throw new RuntimeException("Illegal HexString length<" + hexStr.length()
                     + ">!=4.");
         short d = 0;
         for (int i = 0; i < 3; i++) {
@@ -307,9 +306,9 @@ public class TDataConvert {
         return d;
     }
 
-    public static int hexStr2Int(String hexStr) throws Exception {
+    public static int hexStr2Int(String hexStr) {
         if (hexStr.length() != 8)
-            throw new Exception("Illegal HexString length<" + hexStr.length()
+            throw new RuntimeException("Illegal HexString length<" + hexStr.length()
                     + ">!=8.");
         int d = 0;
         for (int i = 0; i < 7; i++) {
@@ -320,9 +319,9 @@ public class TDataConvert {
         return d;
     }
 
-    public static long hexStr2Long(String hexStr) throws Exception {
+    public static long hexStr2Long(String hexStr) {
         if (hexStr.length() != 16)
-            throw new Exception("Illegal HexString length<" + hexStr.length()
+            throw new RuntimeException("Illegal HexString length<" + hexStr.length()
                     + ">!=16.");
         long d = 0;
         for (int i = 0; i < 15; i++) {
@@ -333,8 +332,12 @@ public class TDataConvert {
         return d;
     }
 
-    public static String hexStr2Str(String hexStr) throws Exception {
-        return new String(hexStr2ByteS(hexStr), "UTF-8");
+    public static String hexStr2Str(String hexStr) {
+        try {
+            return new String(hexStr2ByteS(hexStr), "UTF-8");
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static final byte[] obj2ByteS(Object obj) {
@@ -348,13 +351,13 @@ public class TDataConvert {
         }
     }
     
-    private static int digit(char c) throws Exception {
+    private static int digit(char c) {
         for (int i = 0; i < lowChar.length; i++)
             if (c == lowChar[i])
                 return i;
         for (int i = 0; i < upChar.length; i++)
             if (c == upChar[i])
                 return i;
-        throw new Exception("Unsupported char<" + c + ">!=[0-9a-fA-F].");
+        throw new RuntimeException("Unsupported char<" + c + ">!=[0-9a-fA-F].");
     }
 }

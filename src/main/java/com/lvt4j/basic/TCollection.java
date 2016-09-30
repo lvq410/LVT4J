@@ -1,7 +1,6 @@
 package com.lvt4j.basic;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -109,7 +108,7 @@ public class TCollection {
         }
 
         @Override
-        public Set<java.util.Map.Entry<K, V>> entrySet() {
+        public Set<Entry<K, V>> entrySet() {
             return map.entrySet();
         }
 
@@ -128,48 +127,6 @@ public class TCollection {
             V build(Object key);
             
         }
-    }
-
-    public static class TDistinctList<E> extends ArrayList<E>{
-
-        private static final long serialVersionUID = 1L;
-        
-        @Override
-        public boolean add(E object) {
-            if (!contains(object)) {
-                return super.add(object);
-            }
-            return false;
-        }
-        
-        @Override
-        public void add(int index, E object) {
-            if (!contains(object)) {
-                super.add(index, object);
-            }
-        }
-        
-        @Override
-        public boolean addAll(Collection<? extends E> collection) {
-            boolean changed = false;
-            for (E e: collection) {
-                changed |= add(e);
-            }
-            return changed;
-        }
-        
-        @Override
-        public boolean addAll(int index, Collection<? extends E> collection) {
-            boolean changed = false;
-            for (E e: collection) {
-                if (!contains(e)) {
-                    add(index++, e);
-                    changed = true;
-                }
-            }
-            return changed;
-        }
-        
     }
     
 }

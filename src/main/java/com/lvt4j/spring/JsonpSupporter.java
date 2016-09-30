@@ -28,7 +28,7 @@ import com.sun.istack.internal.Nullable;
  */
 public class JsonpSupporter {
     
-    private static final String[] callbackParamKeys = {"callback","jsonpcallback","jsoncallback"};
+    private static final String[] CallbackParamKeys = {"callback","jsonpcallback","jsoncallback"};
     
     public static class JsonpCallback {
 
@@ -39,7 +39,7 @@ public class JsonpSupporter {
         
         public static void extractCallback(HttpServletRequest req) {
             String callback = null;
-            for (String callbackParamKey: callbackParamKeys) {
+            for (String callbackParamKey: CallbackParamKeys) {
                 callback = req.getParameter(callbackParamKey);
                 if (!TVerify.strNullOrEmpty(callback)) break;
             }
@@ -136,5 +136,6 @@ public class JsonpSupporter {
             outputMessage.getBody().close();
         }
     }
+
     
 }

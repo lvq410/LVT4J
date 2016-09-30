@@ -28,6 +28,7 @@ sourceSets {
 
 repositories {
     jcenter()
+    mavenCentral()
     maven  { url  "http://nexus.corp.youdao.com/nexus/content/repositories/central/" }
     maven  { url  "https://oss.sonatype.org/content/repositories/ksoap2-android-releases/" }
 }
@@ -38,12 +39,19 @@ dependencies {
     compile group: 'com.google.android', name: 'android', version: '4.1.1.4'
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
     compile group: 'org.projectlombok', name: 'lombok', version: '1.16.8'
+    compile group: 'net.sf.json-lib', name: 'json-lib', version: '2.4', classifier:'jdk15'
+    //compile 'net.sf.json-lib:json-lib:2.4:jdk15'
     compile group: 'org.dom4j', name: 'dom4j', version: '2.0.0'
     compile group: 'com.google.code.ksoap2-android', name: 'ksoap2-android', version: '3.6.0'
     compile group: 'com.belerweb', name: 'pinyin4j', version: '2.5.0'
     compile group: 'org.apache.poi', name: 'poi', version: '3.14'
     compile group: 'javax.mail', name: 'mail', version: '1.4.7'
     compile group: 'org.springframework', name: 'spring-web', version: '4.2.6.RELEASE'
+    compile group: 'org.springframework', name: 'spring-webmvc', version: '4.2.6.RELEASE'
+    compile group: 'net.sourceforge.javacsv', name: 'javacsv', version: '2.0'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+    compile group: 'mysql', name: 'mysql-connector-java', version: '6.0.3'
 }
 
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'

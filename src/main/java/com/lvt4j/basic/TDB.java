@@ -25,8 +25,9 @@ import java.util.Map;
 public class TDB {
     
     public static enum Driver{
-        H2("org.h2.Driver","h2"),
-        SQLite("org.sqlite.JDBC","sqlite");
+        H2("org.h2.Driver","h2")
+        ,SQLite("org.sqlite.JDBC","sqlite")
+        ,MySql("com.mysql.jdbc.Driver","mysql");
         
         private String driverClassName;
         private String urlPrefix;
@@ -701,6 +702,17 @@ public class TDB {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+        
+        /**
+         * 只查询一个列时，需要查询结果为单值
+         * @param basic
+         * @return
+         */
+        public <E> E execute2BasicOne(Class<E> basic) {
+            List<E> rst = execute2Basic(basic);
+            if(rst.isEmpty()) return null;
+            return rst.get(0);
         }
         /**
          * 查询结果为map
