@@ -216,7 +216,7 @@ public class TScan {
         }
         catch (MalformedURLException ignore) {}
         return null;
-}
+    }
     
     /**
      * Returns true if the resource located at the given URL is a JAR file.

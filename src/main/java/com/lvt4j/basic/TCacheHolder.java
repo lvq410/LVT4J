@@ -8,7 +8,8 @@ package com.lvt4j.basic;
 
 import java.util.Stack;
 
-import com.sun.istack.internal.NotNull;
+import lombok.NonNull;
+
 
 /**
  * 缓存对象寄存器
@@ -23,7 +24,7 @@ public class TCacheHolder<E> {
     private Stack<E> stack = new Stack<E>();
     private CacheHanlder<E> cacheHandler;
     
-    public TCacheHolder(@NotNull CacheHanlder<E> cacheHandler) {
+    public TCacheHolder(@NonNull CacheHanlder<E> cacheHandler) {
         this.cacheHandler = cacheHandler;
     }
     

@@ -600,22 +600,18 @@ public class HttpRequest implements HttpServletRequest {
     public void setCharacterEncoding(String encoding)
             throws UnsupportedEncodingException {}
 
-    @Override
     public String getLocalAddr() {
         return null;
     }
 
-    @Override
     public String getLocalName() {
         return null;
     }
 
-    @Override
     public int getLocalPort() {
         return 0;
     }
 
-    @Override
     public int getRemotePort() {
         return 0;
     }
@@ -828,118 +824,99 @@ public class HttpRequest implements HttpServletRequest {
 
     }
 
-    @Override
     public boolean isRequestedSessionIdValid() {
         return false;
     }
 
-    @Override
     public boolean isRequestedSessionIdFromCookie() {
         return requestedSessionCookie;
     }
 
-    @Override
     public boolean isRequestedSessionIdFromURL() {
         return requestedSessionURL;
     }
 
-    @Override
     public boolean isRequestedSessionIdFromUrl() {
         return requestedSessionURL;
     }
 
-	@Override
-	public AsyncContext getAsyncContext() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public AsyncContext getAsyncContext() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public long getContentLengthLong() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public long getContentLengthLong() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public DispatcherType getDispatcherType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public DispatcherType getDispatcherType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public ServletContext getServletContext() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean isAsyncStarted() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean isAsyncStarted() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean isAsyncSupported() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean isAsyncSupported() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public AsyncContext startAsync() throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public AsyncContext startAsync() throws IllegalStateException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1)
-			throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1)
+            throws IllegalStateException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean authenticate(HttpServletResponse arg0) throws IOException,
-			ServletException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean authenticate(HttpServletResponse arg0) throws IOException,
+            ServletException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String changeSessionId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String changeSessionId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Part getPart(String arg0) throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Part getPart(String arg0) throws IOException, ServletException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Collection<Part> getParts() throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Collection<Part> getParts() throws IOException, ServletException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void login(String arg0, String arg1) throws ServletException {
-		// TODO Auto-generated method stub
-		
-	}
+    public void login(String arg0, String arg1) throws ServletException {
+        // TODO Auto-generated method stub
+        
+    }
 
-	@Override
-	public void logout() throws ServletException {
-		// TODO Auto-generated method stub
-		
-	}
+    public void logout() throws ServletException {
+        // TODO Auto-generated method stub
+        
+    }
 
-	@Override
-	public <T extends HttpUpgradeHandler> T upgrade(Class<T> arg0)
-			throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> arg0)
+            throws IOException, ServletException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
 
@@ -2321,23 +2298,23 @@ class RequestStream extends ServletInputStream {
 
     }
 
-	@Override
-	public boolean isFinished() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean isFinished() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean isReady() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean isReady() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public void setReadListener(ReadListener arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setReadListener(ReadListener arg0) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }
 

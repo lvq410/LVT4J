@@ -4,6 +4,7 @@
  */
 package com.lvt4j.office;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,7 +17,7 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
-public class TExcel {
+public class TExcel implements Closeable {
     
     private static final int CREATE_FILE = -1;
     private static final int CREATE_SHEET = 0;

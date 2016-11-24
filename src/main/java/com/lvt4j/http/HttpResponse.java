@@ -509,39 +509,33 @@ public class HttpResponse implements HttpServletResponse {
 
     public void setStatus(int sc, String message) {}
 
-    @Override
     public void setCharacterEncoding(String arg0) {
     }
 
-	@Override
-	public void setContentLengthLong(long arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+    public void setContentLengthLong(long arg0) {
+        // TODO Auto-generated method stub
+        
+    }
 
-	@Override
-	public String getHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getHeader(String arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Collection<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Collection<String> getHeaderNames() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Collection<String> getHeaders(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Collection<String> getHeaders(String arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public int getStatus() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public int getStatus() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }
 
@@ -888,17 +882,17 @@ class ResponseStream extends ServletOutputStream {
 
     }
 
-	@Override
-	public boolean isReady() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean isReady() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public void setWriteListener(WriteListener arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setWriteListener(WriteListener arg0) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }
 

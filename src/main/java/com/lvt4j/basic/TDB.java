@@ -11,7 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -19,10 +19,22 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-public class TDB {
+import lombok.NonNull;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.sun.xml.internal.ws.Closeable;
+
+/**
+ * 数据库轻量框架
+ * @author lichenxi
+ */
+public class TDB implements Closeable {
     
     public static enum Driver{
         H2("org.h2.Driver","h2")
@@ -181,7 +193,7 @@ public class TDB {
             } else {
                 throw new RuntimeException("Not support type<" + jType + ">");
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
@@ -219,7 +231,7 @@ public class TDB {
             } else {
                 throw new Exception("Not support type<" + jType + ">");
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
@@ -295,7 +307,7 @@ public class TDB {
                         new java.sql.Date(((Calendar) value).getTimeInMillis()));
             else
                 throw new RuntimeException("Not support type<" + value.getClass() + ">");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
@@ -328,29 +340,35 @@ public class TDB {
 
     private Connection conn;
 
-    public TDB(Driver driver, String path) throws SQLException {
+    public TDB(Driver driver, String path) {
         try {
             Class.forName(driver.driverClassName);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            String url = "jdbc:"+driver.urlPrefix+":"+path;
+            conn = DriverManager.getConnection(url);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
-        String url = "jdbc:"+driver.urlPrefix+":"+path;
-        conn = DriverManager.getConnection(url);
     }
-    public TDB(Driver driver, String path, String userId, String pwd) throws SQLException {
+    public TDB(Driver driver, String path, String userId, String pwd) {
         try {
             Class.forName(driver.driverClassName);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            String url = "jdbc:"+driver.urlPrefix+":"+path;
+            conn = DriverManager.getConnection(url, userId, pwd);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
-        String url = "jdbc:"+driver.urlPrefix+":"+path;
-        conn = DriverManager.getConnection(url, userId, pwd);
+    }
+    public TDB(Connection conn) {
+        this.conn = conn;
     }
     
-    public void close() throws SQLException {
-        conn.close();
+    public void close() {
+        try {
+            conn.close();
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
-
 
 
     public CreateTable table(Class<?> model) {
@@ -381,6 +399,10 @@ public class TDB {
     public Update update(Class<?> model) {
         return new Update(model).in(conn);
     }
+    
+    public Update update(String tblName) {
+        return new Update(tblName).in(conn);
+    }
 
     public Delete delete(Class<?> model) {
         return new Delete(model).in(conn);
@@ -401,7 +423,7 @@ public class TDB {
             setValues(prep, args);
             prep.execute();
             prep.close();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
@@ -464,7 +486,7 @@ public class TDB {
                 Statement stat = conn.createStatement();
                 stat.execute(sql.toString());
                 stat.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -497,7 +519,7 @@ public class TDB {
                 Statement stat = conn.createStatement();
                 stat.execute(sql.toString());
                 stat.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -578,7 +600,7 @@ public class TDB {
                 setValues(prep, valueS.toArray());
                 prep.executeUpdate();
                 prep.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -640,7 +662,7 @@ public class TDB {
                 query.close();
                 prep.close();
                 return rst;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -675,7 +697,7 @@ public class TDB {
                     return obj;
                 }
                 return null;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -699,7 +721,7 @@ public class TDB {
                 query.close();
                 prep.close();
                 return rst;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -714,44 +736,70 @@ public class TDB {
             if(rst.isEmpty()) return null;
             return rst.get(0);
         }
+        
         /**
          * 查询结果为map
-         * @param keyS 
          * @param clsS
          * @return
          */
-        public List<Map<String, Object>> execute2Map(String keyS, Class<?>... clsS) {
+        public List<Map<String, Object>> execute2Map(@NonNull Class<?>... clsS) {
             try {
                 List<Map<String, Object>> rst = new ArrayList<Map<String, Object>>();
-                String[] keys = keyS.replaceAll(" ", "").split(",");
                 pringSQL(sql);
                 PreparedStatement prep = conn.prepareStatement(sql.toString());
                 setValues(prep, argS);
                 ResultSet query = prep.executeQuery();
+                ResultSetMetaData metaData = query.getMetaData();
+                int colCount = metaData.getColumnCount();
+                if(clsS.length!=colCount)
+                    throw new RuntimeException("Arg clsS'length["+clsS.length+"]"
+                            + " is not equal sql rst col count["+colCount+"]!");
+                String[] keys = new String[metaData.getColumnCount()];
+                for (int i = 0; i < colCount; i++) {
+                    keys[i] = metaData.getColumnLabel(i+1);
+                }
                 while (query.next()) {
                     Map<String, Object> map = new HashMap<String, Object>();
-                    for (int i = 0; i < keys.length; i++) {
-                        map.put(keys[i], colData2JData(clsS[i], query, keys[i]));
+                    for (int i = 0; i < colCount; i++) {
+                        map.put(keys[i], colData2JData(clsS[i], query, i+1));
                     }
                     rst.add(map);
                 }
                 query.close();
                 prep.close();
                 return rst;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
+        }
+        
+        /**
+         * 查询结果为map,且只查询一个结果
+         * @param clsS
+         * @return
+         */
+        public Map<String, Object> execute2MapOne(Class<?>... clsS) {
+            List<Map<String, Object>> rst = execute2Map(clsS);
+            if(rst.isEmpty()) return null;
+            return rst.get(0);
         }
     }
 
     public static class Update {
-        private StringBuilder sql;
-        private List<Object> values;
+        
         private Connection conn;
         
+        private String tblName;
+        private Map<String, Object> sets = new LinkedHashMap<String, Object>();
+        private String whereClause;
+        private Object[] whereArgS;
+        
         private Update(Class<?> modelCls) {
-            sql = new StringBuilder("update " + tblName(modelCls) + " set ");
-            values = new ArrayList<Object>();
+            tblName = tblName(modelCls);
+        }
+        
+        private Update(String tblName) {
+            this.tblName = tblName;
         }
         
         private Update in(Connection conn) {
@@ -759,31 +807,38 @@ public class TDB {
             return this;
         }
         
-        public Update set(String colS, Object... setValueS) {
-            for (String col : colS.split(",")) {
-                sql.append(col).append("=?,");
-            }
-            clearEndComma(sql);
-            values.addAll(Arrays.asList(setValueS));
+        public Update set(String col, Object val) {
+            sets.put(col, val);
             return this;
         }
 
         public Update where(String whereClause, Object... whereArgS) {
-            if (!TVerify.strNullOrEmpty(whereClause)) {
-                sql.append(" where ").append(whereClause.replaceAll("where", "")).append(';');
-                values.addAll(Arrays.asList(whereArgS));
-            }
+            if(StringUtils.isEmpty(whereClause)) return this;
+            this.whereClause = whereClause;
+            this.whereArgS = whereArgS;
             return this;
         }
 
         public void execute() {
+            if(sets.isEmpty()) return;
+            StringBuilder sql = new StringBuilder("update " + tblName + " set ");
+            List<Object> setValues = new ArrayList<Object>();
+            for (Entry<String, Object> set : sets.entrySet()) {
+                sql.append(set.getKey()).append("=?,");
+                setValues.add(set.getValue());
+            }
+            clearEndComma(sql);
+            if(StringUtils.isNotEmpty(whereClause))
+                sql.append(" where ").append(whereClause).append(';');
+            if(whereArgS!=null)
+                setValues.addAll(Arrays.asList(whereArgS));
             pringSQL(sql);
             try {
                 PreparedStatement prep = conn.prepareStatement(sql.toString());
-                setValues(prep, values.toArray());
+                setValues(prep, setValues.toArray());
                 prep.executeUpdate();
                 prep.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -818,7 +873,7 @@ public class TDB {
                 setValues(prep, values.toArray());
                 prep.executeUpdate();
                 prep.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -854,7 +909,7 @@ public class TDB {
                 query.close();
                 prep.close();
                 return 0;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
@@ -894,7 +949,7 @@ public class TDB {
                 query.close();
                 prep.close();
                 return false;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }

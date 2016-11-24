@@ -87,7 +87,6 @@ public class JsonpSupporter {
     
     public static class JsonpFilter implements Filter{
 
-        @Override
         public void doFilter(ServletRequest request, ServletResponse response,
                 FilterChain chain) throws IOException, ServletException {
             HttpServletRequest req = (HttpServletRequest)request;
@@ -98,11 +97,9 @@ public class JsonpSupporter {
             chain.doFilter(req, res);
         }
 
-        @Override
         public void init(FilterConfig config) throws ServletException {
         }
         
-        @Override
         public void destroy() {
         }
     }
