@@ -225,7 +225,7 @@ public class TLog {
 
     private static void log2File(StringBuilder log) {
         File logFile = new File(logFolderPath + "/" + logFileName + "."
-                + TDate.Format.YYYY_MM_DD.format(new Date()) + ".tlog");
+                + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + ".tlog");
         try {
             FileWriter filerWriter = new FileWriter(logFile, true);
             BufferedWriter bufWriter = new BufferedWriter(filerWriter);

@@ -1,9 +1,3 @@
-/**
- * @(#)TScan.java, 2016年5月19日. 
- * 
- * Copyright 2016 Yodao, Inc. All rights reserved.
- * YODAO PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.lvt4j.basic;
 
 import java.io.BufferedReader;
@@ -27,7 +21,7 @@ import java.util.regex.Pattern;
 /**
  * java包扫描类<br>
  * 山寨自org.apache.ibatis.io.ResolverUtil
- * @author lichenxi
+ * @author LV
  *
  */
 public class TScan {

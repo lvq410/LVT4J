@@ -5,6 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+/**
+ * 基本上可以做到所有基本数据类型之间的转换
+ * @author LV
+ */
 public class TDataConvert {
 
     private static char[] lowChar = { '0', '1', '2', '3', '4', '5', '6', '7',

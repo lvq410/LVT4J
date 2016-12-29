@@ -1,9 +1,3 @@
-/**
- * @(#)TBloomFilterTest.java, 2016年7月14日. 
- * 
- * Copyright 2016 Yodao, Inc. All rights reserved.
- * YODAO PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.lvt4j.basic;
 
 import org.junit.Test;
@@ -12,7 +6,7 @@ import junit.framework.TestCase;
 
 /**
  *
- * @author lichenxi
+ * @author LV
  *
  */
 public class TBloomFilterTest extends TestCase {

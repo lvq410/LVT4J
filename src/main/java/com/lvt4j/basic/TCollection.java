@@ -2,11 +2,16 @@ package com.lvt4j.basic;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import lombok.NonNull;
 
+/**
+ * 集合工具
+ * @author LV
+ */
 @SuppressWarnings("unchecked")
 public class TCollection {
     
@@ -31,19 +36,33 @@ public class TCollection {
     }
     
     /**
-     * 自动填充map
-     * 具体map实现由构造函数参数控制
-     * 当调用get方法时，若不包含该key，
-     * 则使用构造函数的TAutoMap.ValueBuilder.build创建值并插入
+     * 自动填充map<br>
+     * 当调用get方法时,若不包含该key<br>
+     * 则使用构造函数的ValueBuilder.build创建值并插入<br>
+     * 以此来实现链式api而不会出现空指针异常,如:<br>
+     * TAutoMap.get('someKey').doSomeThing();
      */
     public static class TAutoMap<K, V> implements Map<K, V>, Serializable{
         
         private static final long serialVersionUID = 1L;
         
         private Map<K, V> map;
-        private ValueBuilder<V> valueBuilder;
+        private ValueBuilder<K, V> valueBuilder;
         
-        public TAutoMap(@NonNull Map<K, V> map, @NonNull ValueBuilder<V> valueBuilder) {
+        /**
+         * 没有指定map的实现,默认用hashmap
+         * @param valueBuilder 值构建器
+         */
+        public TAutoMap(@NonNull ValueBuilder<K, V> valueBuilder) {
+            this(new HashMap<K, V>(), valueBuilder);
+        }
+        
+        /**
+         * 
+         * @param map
+         * @param valueBuilder
+         */
+        public TAutoMap(@NonNull Map<K, V> map, @NonNull ValueBuilder<K, V> valueBuilder) {
             this.map = map;
             this.valueBuilder = valueBuilder;
         }
@@ -51,7 +70,7 @@ public class TCollection {
         public V get(Object key) {
             V val = map.get(key);
             if (val!=null) return val;
-            val = valueBuilder.build(key);
+            val = valueBuilder.build((K) key);
             map.put((K) key, val);
             return val;
         }
@@ -110,9 +129,9 @@ public class TCollection {
             return map.toString();
         }
         
-        public interface ValueBuilder<V> extends Serializable {
+        public interface ValueBuilder<K, V> extends Serializable {
             
-            V build(Object key);
+            V build(K key);
             
         }
     }

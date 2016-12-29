@@ -1,9 +1,3 @@
-/**
- * @(#)TLruCache.java, 2016年5月20日. 
- * 
- * Copyright 2016 Yodao, Inc. All rights reserved.
- * YODAO PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.lvt4j.basic;
 
 import java.util.LinkedHashMap;
@@ -13,7 +7,7 @@ import java.util.Objects;
 
 /**
  *
- * @author lichenxi
+ * @author LV
  *
  */
 public class TLruCache<K, V> {

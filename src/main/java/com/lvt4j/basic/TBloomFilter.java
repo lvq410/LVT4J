@@ -1,9 +1,3 @@
-/**
- * @(#)TBloomFilter.java, 2016年7月14日. 
- * 
- * Copyright 2016 Yodao, Inc. All rights reserved.
- * YODAO PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.lvt4j.basic;
 
 import java.io.Serializable;
@@ -13,6 +7,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
 import java.util.Collection;
 
+/**
+ * 一个BloomFilter
+ * @author LV
+ */
 public class TBloomFilter<E> implements Serializable {
     
     private static final long serialVersionUID = 1L;

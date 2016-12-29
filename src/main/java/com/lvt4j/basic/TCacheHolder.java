@@ -1,9 +1,3 @@
-/**
- * @(#)TCacheHolder.java, 2016年5月3日. 
- * 
- * Copyright 2016 Yodao, Inc. All rights reserved.
- * YODAO PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package com.lvt4j.basic;
 
 import java.util.Stack;
@@ -17,7 +11,7 @@ import lombok.NonNull;
  * 使用接口CacheHanlder来创建新对象或重置一个对象
  * TCacheHolder.get()来取得一个对象
  * 不用时用TCacheHolder.release()将对象再放回到缓存对象寄存器中
- * @author lichenxi
+ * @author LV
  */
 public class TCacheHolder<E> {
 

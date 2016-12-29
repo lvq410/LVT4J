@@ -3,6 +3,10 @@ package com.lvt4j.basic;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 字符相关工具
+ * @author LV
+ */
 public enum TChar {
     
     /** 分割符 */
