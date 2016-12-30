@@ -25,11 +25,11 @@ public class JsonResult extends HashMap<String, Object> {
         return success(null, null);
     }
     
-    public static JsonResult success(String msg) {
-        return success(msg, null);
+    public static JsonResult success(Object data) {
+        return success(data, null);
     }
     
-    public static JsonResult success(String msg, Object data) {
+    public static JsonResult success(Object data, String msg) {
         JsonResult rst = new JsonResult();
         rst.put("err", Err.Success);
         if (!TVerify.strNullOrEmpty(msg)) rst.put("msg", msg);
