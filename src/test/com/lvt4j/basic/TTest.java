@@ -1,14 +1,10 @@
 package com.lvt4j.basic;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.junit.Test;
-
-import com.lvt4j.basic.TThread.SplitListJobWorker;
 
 /**
  *
@@ -30,6 +26,7 @@ public class TTest {
                 public void run() {
                     try {
                         for (Entry<String, Integer> entry : map.entrySet()) {
+                            @SuppressWarnings("unused")
                             int b = entry.getValue()+1;
                         }
                     } catch (Exception e) {

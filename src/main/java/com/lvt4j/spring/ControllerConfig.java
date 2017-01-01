@@ -86,36 +86,39 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
      * ●'yyyy-MM-dd HH:mm'<br>
      * ●'yyyy-MM-dd'<br>
      * ●'yyyyMMdd'<br>
+     * ●long型时间戳<br>
      */
     private PropertyEditorSupport dateSupport = new PropertyEditorSupport(){
         @Override
         public void setAsText(String text) throws IllegalArgumentException {
             try {
-                setValue(text==null?null:
-                    DateUtils.parseDate(text, 
+                setValue(DateUtils.parseDate(text, 
                             "yyyy-MM-dd HH:mm:ss", 
                             "yyyyMMdd HH:mm:ss",
                             "yyyy-MM-dd HH:mm",
                             "yyyy-MM-dd",
                             "yyyyMMdd"));
-            } catch (ParseException e) {
-                throw new IllegalArgumentException(e);
-            }
+                return;
+            } catch (ParseException ignore) {}
+            try {
+                setValue(new Date(Long.valueOf(text)));
+                return;
+            } catch (NumberFormatException ignore) {}
+            throw new IllegalArgumentException("不支持的Date型表示:"+text);
         }
     };
-    /** {@link net.sf.json.JSONObject JSONObject}绑定 */
     /** {@link net.sf.json.JSONObject JSONObject}绑定 */
     private PropertyEditorSupport jsonObjectSupport = new PropertyEditorSupport(){
         @Override
         public void setAsText(String text) throws IllegalArgumentException {
-            setValue(text==null?new JSONObject():JSONObject.fromObject(text));
+            setValue(JSONObject.fromObject(text));
         }
     };
     /** {@link net.sf.json.JSONArray JSONArray}绑定 */
     private PropertyEditorSupport jsonArraySupport = new PropertyEditorSupport(){
         @Override
         public void setAsText(String text) throws IllegalArgumentException {
-            setValue(text==null?new JSONArray():JSONArray.fromObject(text));
+            setValue(JSONArray.fromObject(text));
         }
     };
     /**
