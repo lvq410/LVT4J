@@ -92,7 +92,7 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
         @Override
         public void setAsText(String text) throws IllegalArgumentException {
             try {
-                setValue(DateUtils.parseDate(text, 
+                setValue(DateUtils.parseDateStrictly(text, 
                             "yyyy-MM-dd HH:mm:ss", 
                             "yyyyMMdd HH:mm:ss",
                             "yyyy-MM-dd HH:mm",

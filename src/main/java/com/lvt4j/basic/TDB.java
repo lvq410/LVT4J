@@ -1,5 +1,6 @@
 package com.lvt4j.basic;
 
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,10 +30,10 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -114,28 +115,140 @@ import javax.sql.DataSource;
  */
 public class TDB {
     
-    /**
-     * 声明于一个映射到数据库表的类上<br>
-     * 用于指明该类对应的数据库表的表名<br>
-     * 若无此注解,则表名为类的类名
-     * @author LV
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    public static @interface Table {
-        String value() default "";
-    }
+    private static final TDBTypeHandler<Boolean> bitTypeHandler = new TDBTypeHandler<Boolean>() {
+        @Override public Class<Boolean> supportType() { return Boolean.class; }
+        @Override public int jdbcType() { return Types.BIT; }
+        @Override public String jdbcTypeName() { return "BIT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Boolean value) throws SQLException { prep.setBoolean(parameterIndex, value); };
+        @Override public Boolean getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBoolean(columnIndex); }
+    };
+    private static final TDBTypeHandler<Byte> byteTypeHandler = new TDBTypeHandler<Byte>() {
+        @Override public Class<Byte> supportType() { return Byte.class; }
+        @Override public int jdbcType() { return Types.TINYINT; }
+        @Override public String jdbcTypeName() { return "TINYINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Byte value) throws SQLException { prep.setByte(parameterIndex, value); };
+        @Override public Byte getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getByte(columnIndex); }
+    };
+    private static final TDBTypeHandler<Short> shortTypeHandler = new TDBTypeHandler<Short>() {
+        @Override public Class<Short> supportType() { return Short.class; }
+        @Override public int jdbcType() { return Types.SMALLINT; }
+        @Override public String jdbcTypeName() { return "SMALLINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Short value) throws SQLException { prep.setShort(parameterIndex, value); };
+        @Override public Short getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getShort(columnIndex); }
+    };
+    private static final TDBTypeHandler<Integer> intTypeHandler = new TDBTypeHandler<Integer>() {
+        @Override public Class<Integer> supportType() { return Integer.class; }
+        @Override public int jdbcType() { return Types.INTEGER; }
+        @Override public String jdbcTypeName() { return "INTEGER"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Integer value) throws SQLException { prep.setInt(parameterIndex, value); };
+        @Override public Integer getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getInt(columnIndex); }
+    };
+    private static final TDBTypeHandler<Long> longTypeHandler = new TDBTypeHandler<Long>() {
+        @Override public Class<Long> supportType() { return Long.class; }
+        @Override public int jdbcType() { return Types.BIGINT; }
+        @Override public String jdbcTypeName() { return "BIGINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Long value) throws SQLException { prep.setLong(parameterIndex, value); };
+        @Override public Long getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getLong(columnIndex); }
+    };
+    private static final TDBTypeHandler<Float> floatTypeHandler = new TDBTypeHandler<Float>() {
+        @Override public Class<Float> supportType() { return Float.class; }
+        @Override public int jdbcType() { return Types.REAL; }
+        @Override public String jdbcTypeName() { return "REAL"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Float value) throws SQLException { prep.setFloat(parameterIndex, value); };
+        @Override public Float getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getFloat(columnIndex); }
+    };
+    private static final TDBTypeHandler<Double> doubleTypeHandler = new TDBTypeHandler<Double>() {
+        @Override public Class<Double> supportType() { return Double.class; }
+        @Override public int jdbcType() { return Types.DOUBLE; }
+        @Override public String jdbcTypeName() { return "DOUBLE"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Double value) throws SQLException { prep.setDouble(parameterIndex, value); };
+        @Override public Double getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getDouble(columnIndex); }
+    };
+    private static final TDBTypeHandler<Character> charTypeHandler = new TDBTypeHandler<Character>() {
+        @Override public Class<Character> supportType() { return Character.class; }
+        @Override public int jdbcType() { return Types.CHAR; }
+        @Override public String jdbcTypeName() { return "CHAR"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Character value) throws SQLException { prep.setInt(parameterIndex, value); };
+        @Override public Character getResult(ResultSet rs, int columnIndex) throws SQLException { return (char)rs.getInt(columnIndex); }
+    };
+    private static final TDBTypeHandler<String> stringTypeHandler = new TDBTypeHandler<String>() {
+        @Override public Class<String> supportType() { return String.class; }
+        @Override public int jdbcType() { return Types.VARCHAR; }
+        @Override public String jdbcTypeName() { return "VARCHAR"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, String value) throws SQLException { prep.setString(parameterIndex, value); };
+        @Override public String getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getString(columnIndex); }
+    };
+    private static final TDBTypeHandler<StringBuilder> stringbuilderTypeHandler = new TDBTypeHandler<StringBuilder>() {
+        @Override public Class<StringBuilder> supportType() { return StringBuilder.class; }
+        @Override public int jdbcType() { return Types.VARCHAR; }
+        @Override public String jdbcTypeName() { return "VARCHAR"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, StringBuilder value) throws SQLException { prep.setString(parameterIndex, value.toString()); };
+        @Override public StringBuilder getResult(ResultSet rs, int columnIndex) throws SQLException { return new StringBuilder(rs.getString(columnIndex)); }
+    };
+    private static final TDBTypeHandler<StringBuffer> stringbufferTypeHandler = new TDBTypeHandler<StringBuffer>() {
+        @Override public Class<StringBuffer> supportType() { return StringBuffer.class; }
+        @Override public int jdbcType() { return Types.VARCHAR; }
+        @Override public String jdbcTypeName() { return "VARCHAR"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, StringBuffer value) throws SQLException { prep.setString(parameterIndex, value.toString()); };
+        @Override public StringBuffer getResult(ResultSet rs, int columnIndex) throws SQLException { return new StringBuffer(rs.getString(columnIndex)); }
+    };
+    private static final TDBTypeHandler<Timestamp> timestampTypeHandler = new TDBTypeHandler<Timestamp>() {
+        @Override public Class<Timestamp> supportType() { return Timestamp.class; }
+        @Override public int jdbcType() { return Types.TIMESTAMP; }
+        @Override public String jdbcTypeName() { return "TIMESTAMP"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Timestamp value) throws SQLException { prep.setTimestamp(parameterIndex, value); };
+        @Override public Timestamp getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getTimestamp(columnIndex); }
+    };
+    private static final TDBTypeHandler<Date> dateTypeHandler = new TDBTypeHandler<Date>() {
+        @Override public Class<Date> supportType() { return Date.class; }
+        @Override public int jdbcType() { return Types.TIMESTAMP; }
+        @Override public String jdbcTypeName() { return "TIMESTAMP"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Date value) throws SQLException { prep.setTimestamp(parameterIndex, new Timestamp(value.getTime())); };
+        @Override public Date getResult(ResultSet rs, int columnIndex) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(columnIndex);
+            if(timestamp==null) return null;
+            return new Date(timestamp.getTime());
+        }
+    };
+    private static final TDBTypeHandler<Calendar> calendarTypeHandler = new TDBTypeHandler<Calendar>() {
+        @Override public Class<Calendar> supportType() { return Calendar.class; }
+        @Override public int jdbcType() { return Types.TIMESTAMP; }
+        @Override public String jdbcTypeName() { return "TIMESTAMP"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Calendar value) throws SQLException { prep.setTimestamp(parameterIndex, new Timestamp(value.getTimeInMillis())); };
+        @Override public Calendar getResult(ResultSet rs, int columnIndex) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(columnIndex);
+            if(timestamp==null) return null;
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(timestamp.getTime());
+            return calendar;
+        }
+    };
+    private static final TDBTypeHandler<BigDecimal> bigDecimalTypeHandler = new TDBTypeHandler<BigDecimal>() {
+        @Override public Class<BigDecimal> supportType() { return BigDecimal.class; }
+        @Override public int jdbcType() { return Types.DECIMAL; }
+        @Override public String jdbcTypeName() { return "DECIMAL"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, BigDecimal value) throws SQLException { prep.setBigDecimal(parameterIndex, value); };
+        @Override public BigDecimal getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBigDecimal(columnIndex); }
+    };
+    private static final TDBTypeHandler<byte[]> byteArrTypeHandler = new TDBTypeHandler<byte[]>() {
+        @Override public Class<byte[]> supportType() { return byte[].class; }
+        @Override public int jdbcType() { return Types.BLOB; }
+        @Override public String jdbcTypeName() { return "BLOB"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, byte[] value) throws SQLException { prep.setBytes(parameterIndex, value); };
+        @Override public byte[] getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBytes(columnIndex); }
+    };
+    private static final TDBTypeHandler<InputStream> inputstreamTypeHandler = new TDBTypeHandler<InputStream>() {
+        @Override public Class<InputStream> supportType() { return InputStream.class; }
+        @Override public int jdbcType() { return Types.BLOB; }
+        @Override public String jdbcTypeName() { return "BLOB"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, InputStream value) throws SQLException { prep.setBlob(parameterIndex, value); };
+        @Override public InputStream getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBinaryStream(columnIndex); }
+    };
     
-    /**
-     * 声明于一个映射到数据库表列的属性上<br>
-     * 用于指明该属性对应数据库表列的列名<br>
-     * 若无此注解,则属性名即为列名
-     * @author LV
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    public static @interface Col {
-        String value() default "";
+    private static final Map<Class<?>, TDBTypeHandler<?>> allTypeHandlers = new HashMap<Class<?>, TDBTypeHandler<?>>();
+    
+    public static final <E> TDBTypeHandler<?> registerTypeHandler(TDBTypeHandler<E> typeHandler) {
+        return allTypeHandlers.put(typeHandler.supportType(), typeHandler);
     }
     
     private static String tblName(Class<?> cls) {
@@ -152,6 +265,12 @@ public class TDB {
                 !Modifier.isTransient(modifiers);
     }
 
+    private static boolean isAutoId(Field field) {
+        Col col = field.getAnnotation(Col.class);
+        if(col==null) return false;
+        return col.autoId();
+    }
+    
     private static String colName(Field field) {
         Col col = field.getAnnotation(Col.class);
         if(col==null || TVerify.strNullOrEmpty(col.value()))
@@ -161,99 +280,20 @@ public class TDB {
     
     /** 判断javaType对应的jdbcType */
     public static int colType(Class<?> cls) {
-        if (cls == byte.class || cls == Byte.class) {
-            return Types.TINYINT;
-        } else if (cls == int.class || cls == Integer.class) {
-            return Types.INTEGER;
-        } else if (cls == String.class) {
-            return Types.VARCHAR;
-        } else if (cls == boolean.class || cls == Boolean.class) {
-            return Types.BIT;
-        } else if (cls == Date.class || cls == Calendar.class) {
-            return Types.TIMESTAMP;
-        } else if (cls == byte[].class || cls == Byte[].class) {
-            return Types.BLOB;
-        } else if (cls == short.class || cls == Short.class) {
-            return Types.SMALLINT;
-        } else if (cls == long.class || cls == Long.class) {
-            return Types.BIGINT;
-        } else if (cls == float.class || cls == Float.class) {
-            return Types.REAL;
-        } else if (cls == double.class || cls == Double.class) {
-            return Types.DOUBLE;
-        } else if (cls == BigDecimal.class) {
-            return Types.DECIMAL;
-        } else if (cls == char.class || cls == Character.class) {
-            return Types.CHAR;
-        } else {
-            throw new RuntimeException("不支持的java类型<" + cls + ">");
-        }
+        return getTypeHandler(cls).jdbcType();
     }
     /** 判断javaType对应的jdbcType的名 */
     public static String colType2Str(Class<?> cls) {
-        if (cls == byte.class || cls == Byte.class) {
-            return "TINYINT";
-        } else if (cls == int.class || cls == Integer.class) {
-            return "INTEGER";
-        } else if (cls == String.class) {
-            return "VARCHAR";
-        } else if (cls == boolean.class || cls == Boolean.class) {
-            return "BIT";
-        } else if (cls == Date.class || cls == Calendar.class) {
-            return "TIMESTAMP";
-        } else if (cls == byte[].class || cls == Byte[].class) {
-            return "BLOB";
-        } else if (cls == short.class || cls == Short.class) {
-            return "SMALLINT";
-        } else if (cls == long.class || cls == Long.class) {
-            return "BIGINT";
-        } else if (cls == float.class || cls == Float.class) {
-            return "REAL";
-        } else if (cls == double.class || cls == Double.class) {
-            return "DOUBLE";
-        } else if (cls == BigDecimal.class) {
-            return "DECIMAL";
-        } else if (cls == char.class || cls == Character.class) {
-            return "CHAR";
-        } else {
-            throw new RuntimeException("不支持的java类型<" + cls + ">");
-        }
+        return getTypeHandler(cls).jdbcTypeName();
     }
 
-    private static Object colData2JData(Class<?> jType, ResultSet query, int col) throws SQLException {
-        if (jType == byte.class || jType == Byte.class) {
-            return query.getByte(col);
-        } else if (jType == int.class || jType == Integer.class) {
-            return query.getInt(col);
-        } else if (jType == boolean.class || jType == Boolean.class) {
-            return (boolean) query.getBoolean(col);
-        } else if (jType == String.class) {
-            return query.getString(col);
-        } else if (jType == Date.class) {
-            return new Date(query.getTimestamp(col).getTime());
-        } else if (jType == byte[].class || jType == Byte[].class) {
-            return query.getBytes(col);
-        } else if (jType == short.class || jType == Short.class) {
-            return query.getShort(col);
-        } else if (jType == long.class || jType == Long.class) {
-            return query.getLong(col);
-        } else if (jType == float.class || jType == Float.class) {
-            return query.getFloat(col);
-        } else if (jType == double.class || jType == Double.class) {
-            return query.getDouble(col);
-        } else if (jType == BigDecimal.class) {
-            return query.getBigDecimal(col);
-        } else if (jType == char.class || jType == Character.class) {
-            return query.getString(col).charAt(0);
-        } else if (jType == Calendar.class) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(query.getTimestamp(col).getTime());
-            return calendar;
-        } else {
-            throw new RuntimeException("不支持的java类型<" + jType + ">");
-        }
+    private static <E> TDBTypeHandler<E> getTypeHandler(Class<E> cls) {
+        @SuppressWarnings("unchecked")
+        TDBTypeHandler<E> typeHandler = (TDBTypeHandler<E>) allTypeHandlers.get(cls);
+        if(typeHandler==null) throw new RuntimeException("不支持的java类型<" + cls + ">");
+        return typeHandler;
     }
-
+    
     /**
      * 根据value的值类型不同,调用PreparedStatement的不同方法向其内赋值
      * 
@@ -265,7 +305,7 @@ public class TDB {
     private static void setValues(PreparedStatement prep, Object... values) {
         if (values == null || values.length==0) return;
         int i = 1;
-        for (Object value : values) setValue(prep, i++, value);
+        for(Object value : values) setValue(prep, i++, value);
     }
 
     /**
@@ -276,58 +316,60 @@ public class TDB {
      * @param value
      * @throws Exception
      */
+    @SuppressWarnings("unchecked")
     private static void setValue(PreparedStatement prep, int i, Object value) {
-        try {
-            if (value == null)
+        if (value==null){
+            try {
                 prep.setNull(i, Types.NULL);
-            else if (value.getClass() == int.class
-                    || value.getClass() == Integer.class)
-                prep.setInt(i, (Integer) value);
-            else if (value.getClass() == String.class)
-                prep.setString(i, (String) value);
-            else if (value.getClass() == boolean.class
-                    || value.getClass() == Boolean.class)
-                prep.setBoolean(i, (Boolean) value);
-            else if (value.getClass() == Date.class)
-                prep.setTimestamp(i, new Timestamp(((Date) value).getTime()));
-            else if (value.getClass() == byte.class
-                    || value.getClass() == Byte.class)
-                prep.setByte(i, (Byte) value);
-            else if (value.getClass() == byte[].class
-                    || value.getClass() == Byte[].class)
-                prep.setBytes(i, (byte[]) value);
-            else if (value.getClass() == double.class
-                    || value.getClass() == Double.class)
-                prep.setDouble(i, (Double) value);
-            else if (value.getClass() == float.class
-                    || value.getClass() == Float.class)
-                prep.setFloat(i, (Float) value);
-            else if (value.getClass() == long.class
-                    || value.getClass() == Long.class)
-                prep.setLong(i, (Long) value);
-            else if (value.getClass() == short.class
-                    || value.getClass() == Short.class)
-                prep.setShort(i, (Short) value);
-            else if (value.getClass() == char.class
-                    || value.getClass() == Character.class)
-                prep.setString(i, String.valueOf(value));
-            else if (value.getClass() == BigDecimal.class)
-                prep.setBigDecimal(i, (BigDecimal) value);
-            else if (value.getClass() == Calendar.class)
-                prep.setTimestamp(i,
-                    new Timestamp(((Calendar) value).getTimeInMillis()));
-            else
-                throw new RuntimeException("Not support type<" + value.getClass() + ">");
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+            } catch (SQLException e) {
+                throw new RuntimeException("设置sql参数值为null失败", e);
+            }
+            return;
+        }
+        @SuppressWarnings("rawtypes")
+        TDBTypeHandler typeHandler = getTypeHandler(value.getClass());
+        if(typeHandler==null) throw new RuntimeException("未注册的java类型["+value.getClass()+"]");
+        try {
+            typeHandler.setParameter(prep, i, value);
+        } catch (SQLException e) {
+            throw new RuntimeException("设置sql参数值为"+value+"失败", e);
         }
     }
 
-    private static void clearEndComma(StringBuilder sql) {
+    private static StringBuilder clearEndComma(StringBuilder sql) {
         if (sql.charAt(sql.length() - 1) == ',')
             sql.deleteCharAt(sql.length() - 1);
+        return sql;
     }
 
+    static{
+        allTypeHandlers.put(boolean.class, bitTypeHandler);
+        allTypeHandlers.put(Boolean.class, bitTypeHandler);
+        allTypeHandlers.put(byte.class, byteTypeHandler);
+        allTypeHandlers.put(Byte.class, byteTypeHandler);
+        allTypeHandlers.put(short.class, shortTypeHandler);
+        allTypeHandlers.put(Short.class, shortTypeHandler);
+        allTypeHandlers.put(int.class, intTypeHandler);
+        allTypeHandlers.put(Integer.class, intTypeHandler);
+        allTypeHandlers.put(long.class, longTypeHandler);
+        allTypeHandlers.put(Long.class, longTypeHandler);
+        allTypeHandlers.put(float.class, floatTypeHandler);
+        allTypeHandlers.put(Float.class, floatTypeHandler);
+        allTypeHandlers.put(double.class, doubleTypeHandler);
+        allTypeHandlers.put(Double.class, doubleTypeHandler);
+        allTypeHandlers.put(char.class, charTypeHandler);
+        allTypeHandlers.put(Character.class, charTypeHandler);
+        allTypeHandlers.put(String.class, stringTypeHandler);
+        allTypeHandlers.put(StringBuilder.class, stringbuilderTypeHandler);
+        allTypeHandlers.put(StringBuffer.class, stringbufferTypeHandler);
+        allTypeHandlers.put(Timestamp.class, timestampTypeHandler);
+        allTypeHandlers.put(Date.class, dateTypeHandler);
+        allTypeHandlers.put(Calendar.class, calendarTypeHandler);
+        allTypeHandlers.put(BigDecimal.class, bigDecimalTypeHandler);
+        allTypeHandlers.put(byte[].class, byteArrTypeHandler);
+        allTypeHandlers.put(InputStream.class, inputstreamTypeHandler);
+    }
+    
     private boolean printSQL;
     private DataSource dataSource;
     private ThreadLocal<Connection> curConn = new ThreadLocal<Connection>();
@@ -361,25 +403,6 @@ public class TDB {
         System.out.println(sql.toString());
     }
     
-    /**
-     * 若当前线程未打开事务,则释放连接
-     * @throws Exception
-     */
-    private void releaseNoneTransactionConnection() {
-        Connection conn = curConn.get();
-        if(conn==null) return;
-        Transaction transaction = curTransaction.get();
-        if(transaction!=null) return;
-        Throwable ex = null;
-        try {
-            conn.close();
-        } catch (Throwable e) {
-            ex = e;
-        }
-        curConn.remove();
-        if(ex!=null) throw new RuntimeException(ex);
-    }
-    
     private Connection getConnection() {
         Connection conn = curConn.get();
         if(conn!=null) return conn;
@@ -388,8 +411,8 @@ public class TDB {
             conn.setAutoCommit(true);
             curConn.set(conn);
             return conn;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        } catch (Throwable getThrowable) {
+            throw new RuntimeException("获取连接异常", getThrowable);
         }
     }
     
@@ -403,10 +426,10 @@ public class TDB {
         if(transaction!=null) return;
         try {
             transaction = new Transaction(getConnection());
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+            curTransaction.set(transaction);
+        } catch (Throwable beginThrowable) {
+            throw new RuntimeException("开启事务异常", beginThrowable);
         }
-        curTransaction.set(transaction);
     }
     
     /**
@@ -418,8 +441,8 @@ public class TDB {
         if(transaction==null) return;
         try {
             transaction.conn.rollback();
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        } catch (Throwable rollbackThrowable) {
+            throw new RuntimeException("回滚事务异常", rollbackThrowable);
         }
     }
     
@@ -432,37 +455,81 @@ public class TDB {
     public void endTransaction() {
         Transaction transaction = curTransaction.get();
         if(transaction==null) return;
-        TDBException ex = null;
+        RuntimeException ex = null;
         try {
             transaction.conn.commit();
-        } catch (Throwable commitException) {
-            if(ex==null) ex = new TDBException();
-            ex.appendExcetion(commitException);
+        } catch (Throwable commitThrowable) {
+            ex = appendException(ex, "提交事务失败!", commitThrowable);
             try {
                 transaction.conn.rollback();
-            } catch (Throwable roolbackException) {
-                ex.appendExcetion(roolbackException);
+            } catch (Throwable rollbackThrowable) {
+                ex = appendException(ex, "回滚事务失败!", rollbackThrowable);
             }
         }
         curTransaction.remove();
         Connection conn = curConn.get();
         if(conn==null)
-            throw new RuntimeException("连接异常：当前线程内连接丢失!");
+            throw new RuntimeException("连接异常：当前线程内连接丢失!", ex);
         if(conn!=transaction.conn)
-            throw new RuntimeException("连接异常：当前线程内连接与事务连接不一致！");
+            throw new RuntimeException("连接异常：当前线程内连接与事务连接不一致！", ex);
         try {
             conn.close();
-        } catch (Throwable e) {
-            if(ex==null) ex = new TDBException();
-            ex.appendExcetion(e);
+        } catch (Throwable closeThrowable) {
+            ex = appendException(ex, "关闭连接异常", closeThrowable);
         }
         curConn.remove();
         if(ex!=null) throw ex;
     }
 
-    public Insert insert() {
-        return new Insert();
+    /**
+     * 若当前线程未打开事务,则释放连接
+     * @throws Exception
+     */
+    private void releaseNoneTransactionConnection() {
+        Connection conn = curConn.get();
+        if(conn==null) return;
+        Transaction transaction = curTransaction.get();
+        if(transaction!=null) return;
+        try {
+            curConn.remove();
+            conn.close();
+        } catch (Throwable closeThrowable) {
+            throw new RuntimeException("关闭连接异常", closeThrowable);
+        }
     }
+
+    /**
+     * 关闭并释放execute期间使用的PreparedStatement、ResultSet及事务
+     * @param ex
+     * @param prep
+     * @param rs
+     */
+    private void executeFinally(RuntimeException ex, PreparedStatement prep, ResultSet rs) {
+        try {
+            if(rs!=null) rs.close();
+        } catch (Throwable closeThrowable) {
+            ex = appendException(ex, "关闭ResultSet异常", closeThrowable);
+        }
+        try {
+            if(prep!=null) prep.close();
+        } catch (Throwable closeThrowable) {
+            ex = appendException(ex, "关闭PreparedStatement异常", closeThrowable);
+        }
+        try {
+            releaseNoneTransactionConnection();
+        } catch (Throwable closeThrowable) {
+            ex = appendException(ex, "关闭连接异常", closeThrowable);
+        }
+        if(ex!=null) throw ex;
+    }
+
+    private RuntimeException appendException(RuntimeException ex, String msg, Throwable cause) {
+        RuntimeException exNew = new RuntimeException(msg, cause);
+        if(ex==null) ex = exNew;
+        else ex.addSuppressed(exNew);
+        return ex;
+    }
+    
     
     public Insert insert(Object obj) {
         return new Insert(obj);
@@ -477,105 +544,72 @@ public class TDB {
     }
 
     public class Insert {
-        private Class<?> modelCls;
-        private List<Object> modelS = new ArrayList<Object>();
-        
-        private Insert() {}
+        private Object model;
         
         private Insert(Object model) {
-            modelS.add(model);
-            modelCls = model.getClass();
-        }
-        
-        /** 批量插入必须保证多次调用该方法的参数的类一致 */
-        public Insert insert(Object model) {
-            if (modelCls!=null && modelCls!=model.getClass())
-                throw new RuntimeException("Model class not match!"
-                        + "For stroed class<"+modelCls+"> not equal <"+model.getClass()+">");
-            modelS.add(model);
-            if (modelCls==null) modelCls = model.getClass();
-            return this;
-        }
-        
-        public int size() {
-            return modelS.size();
-        }
-        
-        public void clear() {
-            modelCls = null;
-            modelS.clear();
+            this.model = model;
         }
         
         public void execute() {
-            if (modelCls==null)return;
-            StringBuilder sql = new StringBuilder();
-            List<Field> fields = new ArrayList<Field>();
-            List<Object> valueS = new ArrayList<Object>();
-            String table = tblName(modelCls);
-            sql.append("insert into " + table + "(");
-            for (Field field : modelCls.getDeclaredFields()) {
+            Class<?> modelCls = model.getClass();
+            List<Field> fields = new LinkedList<Field>();
+            Field autoIdField = null;
+            List<Object> valueS = new LinkedList<Object>();
+            StringBuilder sql = new StringBuilder("insert into "+tblName(modelCls)+"(");
+            for (Field field : TReflect.allField(modelCls)) {
                 if (!isCol(field))continue;
                 field.setAccessible(true);
                 fields.add(field);
                 sql.append(colName(field)).append(',');
+                if(!isAutoId(field)) continue;
+                if(autoIdField!=null)
+                    throw new RuntimeException("类["+modelCls+"]下自增主键"
+                            + "设置了两个(最多只能设置一个)!");
+                autoIdField = field;
             }
-            clearEndComma(sql);
-            sql.append(") values ");
-            
-            for (Object model : modelS) {
-                sql.append("(");
-                for (Field field: fields) {
-                    sql.append("?,");
-                    try {
-                        valueS.add(field.get(model));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                clearEndComma(sql);
-                sql.append("),");
+            clearEndComma(sql).append(") values (");
+            for (Field field: fields) {
+                sql.append("?,");
+                try {
+                    valueS.add(field.get(model));
+                } catch (Throwable ingore) {}
             }
-            clearEndComma(sql);
-            sql.append(";");
+            clearEndComma(sql).append(");");
             String sqlStr = sql.toString();
             pringSQL(sqlStr);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sqlStr, Statement.RETURN_GENERATED_KEYS);
                 setValues(prep, valueS.toArray());
                 prep.executeUpdate();
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+                if(autoIdField==null) return;
+                try {
+                    rs = prep.getGeneratedKeys();
+                    if(rs.next()) {
+                        Object val = getTypeHandler(autoIdField.getType()).getResult(rs, 1);
+                        autoIdField.set(model, val);
+                    }
+                } catch (Throwable setAutoIdThrowable) {
+                    throw new RuntimeException("获取与设置自增ID异常", setAutoIdThrowable);
+                }
+            } catch (Throwable executeThrowable) {
+                ex = appendException(ex, "执行insert异常", executeThrowable);
             } finally {
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
     }
 
     public class Select {
-        private StringBuilder sql;
+        private String sql;
         private Object[] argS;
         
         private Select(String sql, Object[] argS) {
-            this.sql = new StringBuilder(sql);
+            this.sql = sql;
             this.argS = argS;
         }
-        
         
         /**
          * 查询结果model对象列表<br>
@@ -591,57 +625,36 @@ public class TDB {
                 field.setAccessible(true);
                 fieldS.put(colName(field), field);
             }
-            List<E> rst = new ArrayList<E>();
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            List<E> rst = new LinkedList<E>();
+            pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                ResultSetMetaData metaData = query.getMetaData();
+                rs = prep.executeQuery();
+                ResultSetMetaData metaData = rs.getMetaData();
                 int colCount = metaData.getColumnCount();
                 String[] colS = new String[colCount];
                 for (int i = 0; i < colCount; i++) {
                     colS[i] = metaData.getColumnLabel(i+1);
                 }
-                while (query.next()) {
+                while (rs.next()) {
                     E obj = TReflect.newInstance(modelCls);
                     for (int i = 0; i < colS.length; i++) {
                         String col = colS[i];
                         Field field = fieldS.get(col);
                         if(field==null) continue;
-                        field.set(obj, colData2JData(field.getType(), query, i+1));
+                        field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
                     }
                     rst.add(obj);
                 }
                 return rst;
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2Model()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
         
@@ -652,21 +665,21 @@ public class TDB {
          * @return 查询结果为空时返回null
          */
         public <E> E execute2ModelOne(Class<E> modelCls) {
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sql.toString());
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                if(!query.next()) return null;
+                rs = prep.executeQuery();
+                if(!rs.next()) return null;
                 Map<String, Field> fieldS = new HashMap<String, Field>();
                 for (Field field : TReflect.allField(modelCls)) {
                     if (!isCol(field))continue;
                     field.setAccessible(true);
                     fieldS.put(colName(field), field);
                 }
-                ResultSetMetaData metaData = query.getMetaData();
+                ResultSetMetaData metaData = rs.getMetaData();
                 int colCount = metaData.getColumnCount();
                 String[] colS = new String[colCount];
                 for (int i = 0; i < colCount; i++) {
@@ -677,33 +690,13 @@ public class TDB {
                     String col = colS[i];
                     Field field = fieldS.get(col);
                     if(field==null) continue;
-                    field.set(obj, colData2JData(field.getType(), query, i+1));
+                    field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
                 }
                 return obj;
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2ModelOne()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
 
@@ -712,46 +705,24 @@ public class TDB {
          * @param basic
          * @return
          */
-        @SuppressWarnings("unchecked")
         public <E> List<E> execute2Basic(Class<E> basic) {
-            List<E> rst = new ArrayList<E>();
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            List<E> rst = new LinkedList<E>();
+            pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                while (query.next()) {
-                    rst.add((E) colData2JData(basic, query, 1));
+                rs = prep.executeQuery();
+                while (rs.next()) {
+                    rst.add(getTypeHandler(basic).getResult(rs, 1));
                 }
                 return rst;
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2Basic()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
         
@@ -760,43 +731,21 @@ public class TDB {
          * @param basic
          * @return
          */
-        @SuppressWarnings("unchecked")
         public <E> E execute2BasicOne(Class<E> basic) {
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                if(!query.next()) return null;
-                return (E) colData2JData(basic, query, 1);
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+                rs = prep.executeQuery();
+                if(!rs.next()) return null;
+                return getTypeHandler(basic).getResult(rs, 1);
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2BasicOne()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
         
@@ -806,17 +755,16 @@ public class TDB {
          * @return
          */
         public List<Map<String, Object>> execute2Map(Class<?>... clsS) {
-            List<Map<String, Object>> rst = new ArrayList<Map<String, Object>>();
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            List<Map<String, Object>> rst = new LinkedList<Map<String, Object>>();
+            pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                ResultSetMetaData metaData = query.getMetaData();
+                rs = prep.executeQuery();
+                ResultSetMetaData metaData = rs.getMetaData();
                 int colCount = metaData.getColumnCount();
                 if(clsS.length!=colCount)
                     throw new RuntimeException("参数类列表的数量["+clsS.length+"]"
@@ -825,38 +773,18 @@ public class TDB {
                 for (int i = 0; i < colCount; i++) {
                     keys[i] = metaData.getColumnLabel(i+1);
                 }
-                while (query.next()) {
+                while (rs.next()) {
                     Map<String, Object> map = new HashMap<String, Object>();
                     for (int i = 0; i < colCount; i++) {
-                        map.put(keys[i], colData2JData(clsS[i], query, i+1));
+                        map.put(keys[i], getTypeHandler(clsS[i]).getResult(rs, i+1));
                     }
                     rst.add(map);
                 }
                 return rst;
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2Map()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
         
@@ -866,16 +794,15 @@ public class TDB {
          * @return
          */
         public Map<String, Object> execute2MapOne(Class<?>... clsS) {
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            ResultSet query = null;
-            TDBException ex = null;
+            ResultSet rs = null;
             try {
-                prep = getConnection().prepareStatement(sqlStr);
+                prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                query = prep.executeQuery();
-                ResultSetMetaData metaData = query.getMetaData();
+                rs = prep.executeQuery();
+                ResultSetMetaData metaData = rs.getMetaData();
                 int colCount = metaData.getColumnCount();
                 if(clsS.length!=colCount)
                     throw new RuntimeException("参数类列表的数量["+clsS.length+"]"
@@ -884,42 +811,21 @@ public class TDB {
                 for (int i = 0; i < colCount; i++) {
                     keys[i] = metaData.getColumnLabel(i+1);
                 }
-                if(!query.next()) return null;
+                if(!rs.next()) return null;
                 Map<String, Object> map = new HashMap<String, Object>();
                 for (int i = 0; i < colCount; i++) {
-                    map.put(keys[i], colData2JData(clsS[i], query, i+1));
+                    map.put(keys[i], getTypeHandler(clsS[i]).getResult(rs, i+1));
                 }
                 return map;
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行select.execute2MapOne()异常", executeThrowable);
             } finally {
-                try {
-                    if(query!=null) query.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, rs);
             }
         }
     }
 
     public class ExecSQL{
-        
         private String sql;
         private Object[] argS;
         
@@ -928,41 +834,26 @@ public class TDB {
             this.argS = argS;
         }
 
-        public void execute() {
+        public int execute() {
             pringSQL(sql);
+            RuntimeException ex = null;
             PreparedStatement prep = null;
-            TDBException ex = null;
             try {
                 prep = getConnection().prepareStatement(sql);
                 setValues(prep, argS);
-                prep.execute();
+                int effectRowCount = prep.executeUpdate();
                 prep.close();
-            } catch (Throwable e) {
-                ex = new TDBException();
-                ex.appendExcetion(e);
-                throw ex;
+                return effectRowCount;
+            } catch (Throwable executeThrowable) {
+                throw ex=appendException(ex, "执行sql异常", executeThrowable);
             } finally {
-                try {
-                    if(prep!=null) prep.close();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                try {
-                    releaseNoneTransactionConnection();
-                } catch (Throwable e) {
-                    if(ex==null) ex = new TDBException();
-                    ex.appendExcetion(e);
-                }
-                if(ex!=null) throw ex;
+                executeFinally(ex, prep, null);
             }
         }
-        
     }
 
     /** 简单数据源,最大只支持5个链接 */
     private class TDBDataSource implements DataSource {
-
         /** 最大连接数量 */
         private static final int MaxConnNum = 5;
         
@@ -1103,7 +994,6 @@ public class TDB {
     }
     
     private class Transaction{
-        
         private Connection conn;
         
         private Transaction(Connection conn) {
@@ -1114,25 +1004,54 @@ public class TDB {
                 throw new RuntimeException(e);
             }
         }
-        
     }
     
-    private class TDBException extends RuntimeException {
+    
+    /**
+     * 声明于一个映射到数据库表的类上<br>
+     * 用于指明该类对应的数据库表的表名<br>
+     * 若无此注解,则表名为类的类名
+     * @author LV
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public static @interface Table {
+        String value() default "";
+    }
+    
+    /**
+     * 声明于一个映射到数据库表列的属性上<br>
+     * 用于指明该属性对应数据库表列的列名<br>
+     * 若无此注解,则属性名即为列名<br>
+     * 若该列为自增主键,插入时若想获取自增id,需设置autoId为true
+     * @author LV
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public static @interface Col {
+        String value() default "";
+        boolean autoId() default false;
+    }
+    
+    /**
+     * 类型转换器<br>
+     * 用于java类和数据库类型的转换与处理
+     */
+    public interface TDBTypeHandler<E>{
+        /** 所有支持的java类 */
+        public Class<E> supportType();
         
-        private static final long serialVersionUID = 1L;
+        /** 对应的jdbc类型,在{@link java.sql.Types Types}范围内 */
+        public int jdbcType();
         
-        StringBuilder msg = new StringBuilder();
+        /** 对应jdbc类型的名 */
+        public String jdbcTypeName();
         
-        private TDBException() {}
+        /** 设置sql参数值 */
+        public void setParameter(PreparedStatement prep, int parameterIndex, E value) throws SQLException;
         
-        @Override
-        public String getMessage() {
-            return msg.toString();
-        }
-        
-        private void appendExcetion(Throwable e) {
-            this.msg.append(TSys.printThrowStackTrace(e));
-        }
+        /** 结果集转为java类 */
+        public E getResult(ResultSet rs, int columnIndex) throws SQLException;
     }
     
 }

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,6 +19,8 @@ import com.lvt4j.basic.TCounter;
 import com.lvt4j.basic.TDB;
 import com.lvt4j.basic.TDB.Col;
 import com.lvt4j.basic.TDB.Table;
+import com.lvt4j.mybatis.JSONArrayHandler;
+import com.lvt4j.mybatis.JSONObjectHandler;
 
 /**
  *
@@ -55,11 +60,16 @@ public class TDBTest {
     
     @Test
     public void test() {
+        TDB.registerTypeHandler(new JSONArrayHandler());
+        TDB.registerTypeHandler(new JSONObjectHandler());
+        
         for (TDB db : new TDB[]{myDB, externalDB}) {
             db.executeSQL("drop table if exists `model`").execute();
             db.executeSQL("create table `model`("
                     + "`id` int(11) not null auto_increment, "
-                    + "`col` varchar(255) default null, "
+                    + "`col` varchar(255) default null,"
+                    + "`json` text ,"
+                    + "`arr` text , "
                     + "primary key (`id`)) "
                     + "engine=innodb default charset=utf8")
                     .execute();
@@ -76,15 +86,10 @@ public class TDBTest {
                 job.start();
             }
             
-            while (counter.get()!=0) {
-                synchronized (counter) {
-                    try {
-                        counter.wait();
-                    } catch (InterruptedException e) {}
-                }
-            }
+            counter.waitUntil(0, -1);
             
-            db.executeSQL("delete from model").execute();
+            int rowCount = db.executeSQL("delete from model").execute();
+            Assert.assertTrue(rowCount>0);
             db.executeSQL("drop table `model`").execute();
         }
     }
@@ -95,6 +100,7 @@ public class TDBTest {
         String suffix = UUID.randomUUID().toString();
         TCounter counter;
         
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             String data1 = "1-"+suffix;
@@ -103,10 +109,13 @@ public class TDBTest {
             String data4 = "4-"+suffix;
             String data5 = "5-"+suffix;
             String data6 = "6-"+suffix;
+            String data7 = "7-"+suffix;
+            String data8 = "8-"+suffix;
             
             Model model1 = new Model();
             model1.alias = data1;
             db.insert(model1).execute();
+            Assert.assertTrue(model1.id!=null && model1.id>0);
             Assert.assertEquals(data1,
                     db.select("select col from model where col=?", data1).execute2BasicOne(String.class));
             
@@ -139,9 +148,10 @@ public class TDBTest {
             
             Model model5 = new Model();
             model5.alias = data5;
+            db.insert(model5).execute();
             Model model6 = new Model();
             model6.alias = data6;
-            db.insert(model5).insert(model6).execute();
+            db.insert(model6).execute();
             
             Collection<String> standardCols = Arrays.asList(data4, data5, data6);
             Assert.assertTrue(
@@ -155,20 +165,40 @@ public class TDBTest {
             }
             Assert.assertTrue(TCollection.isEqual(standardCols, mapRstCols));
             
-            synchronized (counter) {
-                counter.dec();
-                counter.notify();
-            }
+            Model model7 = new Model();
+            model7.alias = data7;
+            model7.json = new JSONObject();
+            model7.json.put("data", data7);
+            db.insert(model7).execute();
+            JSONObject model7Json = db.select("select json from model where id=?", model7.id).execute2BasicOne(JSONObject.class);
+            Assert.assertNotNull(model7Json);
+            Assert.assertEquals(data7, model7Json.getString("data"));
+            
+            Model model8 = new Model();
+            model8.alias = data8;
+            model8.arr = new JSONArray();
+            model8.arr.add(data7);
+            model8.arr.add(data8);
+            db.insert(model8).execute();
+            JSONArray model8Arr = db.select("select arr from model where id=?", model8.id).execute2BasicOne(JSONArray.class);
+            Assert.assertNotNull(model8Arr);
+            standardCols = Arrays.asList(data7, data8);
+            Assert.assertTrue(TCollection.isEqual(standardCols, model8Arr));
+            
+            counter.dec();
         }
     }
     
     static class BaseBean {
+        @Col(autoId=true)
         Integer id;
     }
     @Table("model")
     static class Model extends BaseBean{
         @Col("col")
         String alias;
+        JSONObject json;
+        JSONArray arr;
     }
     
 }
