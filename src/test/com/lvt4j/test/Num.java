@@ -21,7 +21,7 @@ import com.lvt4j.basic.TLog;
 import com.lvt4j.basic.TProps;
 import com.lvt4j.basic.TReflect;
 import com.lvt4j.basic.TStr;
-import com.lvt4j.office.TMybatis;
+import com.lvt4j.mybatis.TMybatis;
 
 public class Num {
 	

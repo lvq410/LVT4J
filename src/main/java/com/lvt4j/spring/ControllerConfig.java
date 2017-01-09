@@ -4,20 +4,27 @@ import java.beans.PropertyEditorSupport;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.PropertyEditorRegistrar;
+import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpResponse;
-import org.springframework.web.bind.ServletRequestDataBinder;
+import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -36,7 +43,7 @@ import com.lvt4j.basic.TPager;
  * @author LV
  */
 @ControllerAdvice
-public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
+public class ControllerConfig extends AbstractJsonpResponseBodyAdvice implements PropertyEditorRegistrar{
 
     /** 父类的构造函数里配置jsonp的回调函数参数名 */
     public ControllerConfig() {
@@ -64,7 +71,7 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
      * @param ex
      * @throws IOException
      */
-    @ExceptionHandler(Err.class)
+    @ExceptionHandler
     @ResponseBody
     public JsonResult errExceptionHandler(HttpServletRequest req,
             HttpServletResponse res,
@@ -84,8 +91,14 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
      * ●'yyyy-MM-dd HH:mm:ss'<br>
      * ●'yyyyMMdd HH:mm:ss'<br>
      * ●'yyyy-MM-dd HH:mm'<br>
+     * ●'yyyyMMdd HH:mm'<br>
+     * ●'yyyy-MM-dd HH'<br>
+     * ●'yyyyMMdd HH'<br>
      * ●'yyyy-MM-dd'<br>
      * ●'yyyyMMdd'<br>
+     * ●'yyyy-MM'<br>
+     * ●'yyyyMM'<br>
+     * ●'yyyy'<br>
      * ●long型时间戳<br>
      */
     private PropertyEditorSupport dateSupport = new PropertyEditorSupport(){
@@ -96,8 +109,14 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
                             "yyyy-MM-dd HH:mm:ss", 
                             "yyyyMMdd HH:mm:ss",
                             "yyyy-MM-dd HH:mm",
+                            "yyyyMMdd HH:mm",
+                            "yyyy-MM-dd HH",
+                            "yyyyMMdd HH",
                             "yyyy-MM-dd",
-                            "yyyyMMdd"));
+                            "yyyyMMdd",
+                            "yyyy-MM",
+                            "yyyyMM",
+                            "yyyy"));
                 return;
             } catch (ParseException ignore) {}
             try {
@@ -271,18 +290,54 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice{
     
     /** 注入各种数据转换绑定支持 */
     @InitBinder
-    protected void initBinder(HttpServletRequest request, ServletRequestDataBinder binder) {
-        binder.registerCustomEditor(Date.class, dateSupport);
-        binder.registerCustomEditor(JSONObject.class, jsonObjectSupport);
-        binder.registerCustomEditor(JSONArray.class, jsonArraySupport);
-        binder.registerCustomEditor(int[].class, intArraySupport);
-        binder.registerCustomEditor(int[][].class, intTwoDimensionArraySupport);
-        binder.registerCustomEditor(long[].class, longArraySupport);
-        binder.registerCustomEditor(long[][].class, longTwoDimensionArraySupport);
-        binder.registerCustomEditor(double[].class, doubleArraySupport);
-        binder.registerCustomEditor(double[][].class, doubleTwoDimensionArraySupport);
-        binder.registerCustomEditor(String[].class, strArraySupport);
-        binder.registerCustomEditor(TPager.class, tPagerSupport);
+    public void initBinder(DataBinder binder) {
+        binder.setAutoGrowCollectionLimit(Integer.MAX_VALUE);
+        registerCustomEditors(binder);
+    }
+
+    @Override
+    public void registerCustomEditors(PropertyEditorRegistry registry) {
+        registry.registerCustomEditor(Date.class, dateSupport);
+        registry.registerCustomEditor(JSONObject.class, jsonObjectSupport);
+        registry.registerCustomEditor(JSONArray.class, jsonArraySupport);
+        registry.registerCustomEditor(int[].class, intArraySupport);
+        registry.registerCustomEditor(int[][].class, intTwoDimensionArraySupport);
+        registry.registerCustomEditor(long[].class, longArraySupport);
+        registry.registerCustomEditor(long[][].class, longTwoDimensionArraySupport);
+        registry.registerCustomEditor(double[].class, doubleArraySupport);
+        registry.registerCustomEditor(double[][].class, doubleTwoDimensionArraySupport);
+        registry.registerCustomEditor(String[].class, strArraySupport);
+        registry.registerCustomEditor(TPager.class, tPagerSupport);
+    }
+    
+    /**
+     * 使用BeanWrapper将JSONArray转为具体bean的数组<br>
+     * 以回避一个spring的bug
+     * @param jsonArray
+     * @param beanClass
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public <E> List<E> jsonArray2BeanListByBeanWrapper(JSONArray jsonArray, Class<E> beanClass) {
+        List<E> list = new LinkedList<E>();
+        if(jsonArray==null || jsonArray.isEmpty()) return list;
+        BeanWrapperImpl beanWrapper = new BeanWrapperImpl();
+        registerCustomEditors(beanWrapper);
+        for(int i = 0; i < jsonArray.size(); i++){
+            JSONObject beanJson = jsonArray.optJSONObject(i);
+            if(beanJson==null) {
+                list.add(null);
+                continue;
+            }
+            beanWrapper.setBeanInstance(BeanUtils.instantiate(beanClass));
+            for(Object key : beanJson.keySet()){
+                Object val = beanJson.get(key.toString());
+                if(val==JSONNull.getInstance()) continue;
+                beanWrapper.setPropertyValue(key.toString(), val.toString());
+            }
+            list.add((E)beanWrapper.getWrappedInstance());
+        }
+        return list;
     }
     
 }

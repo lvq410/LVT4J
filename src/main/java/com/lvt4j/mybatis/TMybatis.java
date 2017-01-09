@@ -1,4 +1,4 @@
-package com.lvt4j.office;
+package com.lvt4j.mybatis;
 
 import java.lang.reflect.Field;
 

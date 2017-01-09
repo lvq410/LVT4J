@@ -14,6 +14,7 @@ import org.apache.ibatis.type.MappedTypes;
 import org.apache.ibatis.type.TypeHandler;
 
 import com.lvt4j.basic.TDB.TDBTypeHandler;
+import com.lvt4j.basic.TVerify;
 
 @MappedJdbcTypes(value=JdbcType.VARCHAR)
 @MappedTypes(value=JSONArray.class)
@@ -34,20 +35,20 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
     public JSONArray getResult(ResultSet rs, String columnName)
             throws SQLException {
         String val = rs.getString(columnName);
-        return val==null?new JSONArray():JSONArray.fromObject(val);
+        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
     }
 
     @Override
     public JSONArray getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
-        return val==null?new JSONArray():JSONArray.fromObject(val);
+        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
     }
 
     @Override
     public JSONArray getResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String val = cs.getString(columnIndex);
-        return val==null?new JSONArray():JSONArray.fromObject(val);
+        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
     }
 
     //-------------------------------------------------------------------for TDB
