@@ -13,7 +13,6 @@ import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 import org.apache.ibatis.type.TypeHandler;
 
-import com.lvt4j.basic.TVerify;
 import com.lvt4j.basic.TDB.TDBTypeHandler;
 
 @MappedJdbcTypes(value=JdbcType.VARCHAR)
@@ -24,10 +23,10 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
     @Override
     public void setParameter(PreparedStatement ps, int i, JSONObject json,
             JdbcType jdbcType) throws SQLException {
-        if (json!=null && json.size()>0) {
-            ps.setString(i, json.toString());
-        } else {
+        if(json==null) {
             ps.setNull(i, JdbcType.VARCHAR.ordinal());
+        } else {
+            ps.setString(i, json.toString());
         }
     }
 
@@ -35,20 +34,23 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
     public JSONObject getResult(ResultSet rs, String columnName)
             throws SQLException {
         String val = rs.getString(columnName);
-        return TVerify.strNullOrEmpty(val)?new JSONObject():JSONObject.fromObject(val);
+        if(val==null) return null;
+        return JSONObject.fromObject(val);
     }
     
     @Override
     public JSONObject getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
-        return TVerify.strNullOrEmpty(val)?new JSONObject():JSONObject.fromObject(val);
+        if(val==null) return null;
+        return JSONObject.fromObject(val);
     }
 
     @Override
     public JSONObject getResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String val = cs.getString(columnIndex);
-        return TVerify.strNullOrEmpty(val)?new JSONObject():JSONObject.fromObject(val);
+        if(val==null) return null;
+        return JSONObject.fromObject(val);
     }
 
     //-------------------------------------------------------------------for TDB
@@ -70,10 +72,10 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
     @Override
     public void setParameter(PreparedStatement ps, int i,
             JSONObject json) throws SQLException {
-        if (json.size()>0) {
-            ps.setString(i, json.toString());
-        } else {
+        if(json==null) {
             ps.setNull(i, Types.NULL);
+        } else {
+            ps.setString(i, json.toString());
         }
     }
 

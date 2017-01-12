@@ -115,91 +115,187 @@ import javax.sql.DataSource;
  */
 public class TDB {
     
-    private static final TDBTypeHandler<Boolean> bitTypeHandler = new TDBTypeHandler<Boolean>() {
+    private static final TDBTypeHandler<Boolean> booleanHandler = new TDBTypeHandler<Boolean>() {
         @Override public Class<Boolean> supportType() { return Boolean.class; }
         @Override public int jdbcType() { return Types.BIT; }
         @Override public String jdbcTypeName() { return "BIT"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Boolean value) throws SQLException { prep.setBoolean(parameterIndex, value); };
         @Override public Boolean getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBoolean(columnIndex); }
     };
-    private static final TDBTypeHandler<Byte> byteTypeHandler = new TDBTypeHandler<Byte>() {
+    private static final TDBTypeHandler<Boolean> BooleanHandler = new TDBTypeHandler<Boolean>() {
+        @Override public Class<Boolean> supportType() { return Boolean.class; }
+        @Override public int jdbcType() { return Types.BIT; }
+        @Override public String jdbcTypeName() { return "BIT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Boolean value) throws SQLException { prep.setBoolean(parameterIndex, value); };
+        @Override public Boolean getResult(ResultSet rs, int columnIndex) throws SQLException {
+            boolean value = rs.getBoolean(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Byte> byteHandler = new TDBTypeHandler<Byte>() {
         @Override public Class<Byte> supportType() { return Byte.class; }
         @Override public int jdbcType() { return Types.TINYINT; }
         @Override public String jdbcTypeName() { return "TINYINT"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Byte value) throws SQLException { prep.setByte(parameterIndex, value); };
         @Override public Byte getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getByte(columnIndex); }
     };
-    private static final TDBTypeHandler<Short> shortTypeHandler = new TDBTypeHandler<Short>() {
+    private static final TDBTypeHandler<Byte> ByteHandler = new TDBTypeHandler<Byte>() {
+        @Override public Class<Byte> supportType() { return Byte.class; }
+        @Override public int jdbcType() { return Types.TINYINT; }
+        @Override public String jdbcTypeName() { return "TINYINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Byte value) throws SQLException { prep.setByte(parameterIndex, value); };
+        @Override public Byte getResult(ResultSet rs, int columnIndex) throws SQLException {
+            byte value = rs.getByte(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Short> shortHandler = new TDBTypeHandler<Short>() {
         @Override public Class<Short> supportType() { return Short.class; }
         @Override public int jdbcType() { return Types.SMALLINT; }
         @Override public String jdbcTypeName() { return "SMALLINT"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Short value) throws SQLException { prep.setShort(parameterIndex, value); };
         @Override public Short getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getShort(columnIndex); }
     };
-    private static final TDBTypeHandler<Integer> intTypeHandler = new TDBTypeHandler<Integer>() {
+    private static final TDBTypeHandler<Short> ShortHandler = new TDBTypeHandler<Short>() {
+        @Override public Class<Short> supportType() { return Short.class; }
+        @Override public int jdbcType() { return Types.SMALLINT; }
+        @Override public String jdbcTypeName() { return "SMALLINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Short value) throws SQLException { prep.setShort(parameterIndex, value); };
+        @Override public Short getResult(ResultSet rs, int columnIndex) throws SQLException {
+            short value = rs.getShort(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Integer> intHandler = new TDBTypeHandler<Integer>() {
         @Override public Class<Integer> supportType() { return Integer.class; }
         @Override public int jdbcType() { return Types.INTEGER; }
         @Override public String jdbcTypeName() { return "INTEGER"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Integer value) throws SQLException { prep.setInt(parameterIndex, value); };
         @Override public Integer getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getInt(columnIndex); }
     };
-    private static final TDBTypeHandler<Long> longTypeHandler = new TDBTypeHandler<Long>() {
+    private static final TDBTypeHandler<Integer> IntegerHandler = new TDBTypeHandler<Integer>() {
+        @Override public Class<Integer> supportType() { return Integer.class; }
+        @Override public int jdbcType() { return Types.INTEGER; }
+        @Override public String jdbcTypeName() { return "INTEGER"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Integer value) throws SQLException { prep.setInt(parameterIndex, value); };
+        @Override public Integer getResult(ResultSet rs, int columnIndex) throws SQLException {
+            int value = rs.getInt(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Long> longHandler = new TDBTypeHandler<Long>() {
         @Override public Class<Long> supportType() { return Long.class; }
         @Override public int jdbcType() { return Types.BIGINT; }
         @Override public String jdbcTypeName() { return "BIGINT"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Long value) throws SQLException { prep.setLong(parameterIndex, value); };
         @Override public Long getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getLong(columnIndex); }
     };
-    private static final TDBTypeHandler<Float> floatTypeHandler = new TDBTypeHandler<Float>() {
+    private static final TDBTypeHandler<Long> LongHandler = new TDBTypeHandler<Long>() {
+        @Override public Class<Long> supportType() { return Long.class; }
+        @Override public int jdbcType() { return Types.BIGINT; }
+        @Override public String jdbcTypeName() { return "BIGINT"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Long value) throws SQLException { prep.setLong(parameterIndex, value); };
+        @Override public Long getResult(ResultSet rs, int columnIndex) throws SQLException {
+            long value = rs.getLong(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Float> floatHandler = new TDBTypeHandler<Float>() {
         @Override public Class<Float> supportType() { return Float.class; }
         @Override public int jdbcType() { return Types.REAL; }
         @Override public String jdbcTypeName() { return "REAL"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Float value) throws SQLException { prep.setFloat(parameterIndex, value); };
         @Override public Float getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getFloat(columnIndex); }
     };
-    private static final TDBTypeHandler<Double> doubleTypeHandler = new TDBTypeHandler<Double>() {
+    private static final TDBTypeHandler<Float> FloatHandler = new TDBTypeHandler<Float>() {
+        @Override public Class<Float> supportType() { return Float.class; }
+        @Override public int jdbcType() { return Types.REAL; }
+        @Override public String jdbcTypeName() { return "REAL"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Float value) throws SQLException { prep.setFloat(parameterIndex, value); };
+        @Override public Float getResult(ResultSet rs, int columnIndex) throws SQLException {
+            float value = rs.getFloat(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Double> doubleHandler = new TDBTypeHandler<Double>() {
         @Override public Class<Double> supportType() { return Double.class; }
         @Override public int jdbcType() { return Types.DOUBLE; }
         @Override public String jdbcTypeName() { return "DOUBLE"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Double value) throws SQLException { prep.setDouble(parameterIndex, value); };
         @Override public Double getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getDouble(columnIndex); }
     };
-    private static final TDBTypeHandler<Character> charTypeHandler = new TDBTypeHandler<Character>() {
+    private static final TDBTypeHandler<Double> DoubleHandler = new TDBTypeHandler<Double>() {
+        @Override public Class<Double> supportType() { return Double.class; }
+        @Override public int jdbcType() { return Types.DOUBLE; }
+        @Override public String jdbcTypeName() { return "DOUBLE"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Double value) throws SQLException { prep.setDouble(parameterIndex, value); };
+        @Override public Double getResult(ResultSet rs, int columnIndex) throws SQLException {
+            double value = rs.getDouble(columnIndex);
+            if(rs.wasNull()) return null;
+            return value;
+        }
+    };
+    private static final TDBTypeHandler<Character> charHandler = new TDBTypeHandler<Character>() {
         @Override public Class<Character> supportType() { return Character.class; }
         @Override public int jdbcType() { return Types.CHAR; }
         @Override public String jdbcTypeName() { return "CHAR"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Character value) throws SQLException { prep.setInt(parameterIndex, value); };
         @Override public Character getResult(ResultSet rs, int columnIndex) throws SQLException { return (char)rs.getInt(columnIndex); }
     };
-    private static final TDBTypeHandler<String> stringTypeHandler = new TDBTypeHandler<String>() {
+    private static final TDBTypeHandler<Character> CharacterHandler = new TDBTypeHandler<Character>() {
+        @Override public Class<Character> supportType() { return Character.class; }
+        @Override public int jdbcType() { return Types.CHAR; }
+        @Override public String jdbcTypeName() { return "CHAR"; }
+        @Override public void setParameter(PreparedStatement prep, int parameterIndex, Character value) throws SQLException { prep.setInt(parameterIndex, value); };
+        @Override public Character getResult(ResultSet rs, int columnIndex) throws SQLException {
+            int value = rs.getInt(columnIndex);
+            if(rs.wasNull()) return null;
+            return (char)value;
+        }
+    };
+    private static final TDBTypeHandler<String> StringHandler = new TDBTypeHandler<String>() {
         @Override public Class<String> supportType() { return String.class; }
         @Override public int jdbcType() { return Types.VARCHAR; }
         @Override public String jdbcTypeName() { return "VARCHAR"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, String value) throws SQLException { prep.setString(parameterIndex, value); };
         @Override public String getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getString(columnIndex); }
     };
-    private static final TDBTypeHandler<StringBuilder> stringbuilderTypeHandler = new TDBTypeHandler<StringBuilder>() {
+    private static final TDBTypeHandler<StringBuilder> StringbuilderHandler = new TDBTypeHandler<StringBuilder>() {
         @Override public Class<StringBuilder> supportType() { return StringBuilder.class; }
         @Override public int jdbcType() { return Types.VARCHAR; }
         @Override public String jdbcTypeName() { return "VARCHAR"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, StringBuilder value) throws SQLException { prep.setString(parameterIndex, value.toString()); };
-        @Override public StringBuilder getResult(ResultSet rs, int columnIndex) throws SQLException { return new StringBuilder(rs.getString(columnIndex)); }
+        @Override public StringBuilder getResult(ResultSet rs, int columnIndex) throws SQLException {
+            String value = rs.getString(columnIndex);
+            if(value==null) return null;
+            return new StringBuilder(value);
+        }
     };
-    private static final TDBTypeHandler<StringBuffer> stringbufferTypeHandler = new TDBTypeHandler<StringBuffer>() {
+    private static final TDBTypeHandler<StringBuffer> StringbufferHandler = new TDBTypeHandler<StringBuffer>() {
         @Override public Class<StringBuffer> supportType() { return StringBuffer.class; }
         @Override public int jdbcType() { return Types.VARCHAR; }
         @Override public String jdbcTypeName() { return "VARCHAR"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, StringBuffer value) throws SQLException { prep.setString(parameterIndex, value.toString()); };
-        @Override public StringBuffer getResult(ResultSet rs, int columnIndex) throws SQLException { return new StringBuffer(rs.getString(columnIndex)); }
+        @Override public StringBuffer getResult(ResultSet rs, int columnIndex) throws SQLException {
+            String value = rs.getString(columnIndex);
+            if(value==null) return null;
+            return new StringBuffer(value);
+        }
     };
-    private static final TDBTypeHandler<Timestamp> timestampTypeHandler = new TDBTypeHandler<Timestamp>() {
+    private static final TDBTypeHandler<Timestamp> TimestampHandler = new TDBTypeHandler<Timestamp>() {
         @Override public Class<Timestamp> supportType() { return Timestamp.class; }
         @Override public int jdbcType() { return Types.TIMESTAMP; }
         @Override public String jdbcTypeName() { return "TIMESTAMP"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, Timestamp value) throws SQLException { prep.setTimestamp(parameterIndex, value); };
         @Override public Timestamp getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getTimestamp(columnIndex); }
     };
-    private static final TDBTypeHandler<Date> dateTypeHandler = new TDBTypeHandler<Date>() {
+    private static final TDBTypeHandler<Date> DateHandler = new TDBTypeHandler<Date>() {
         @Override public Class<Date> supportType() { return Date.class; }
         @Override public int jdbcType() { return Types.TIMESTAMP; }
         @Override public String jdbcTypeName() { return "TIMESTAMP"; }
@@ -210,7 +306,7 @@ public class TDB {
             return new Date(timestamp.getTime());
         }
     };
-    private static final TDBTypeHandler<Calendar> calendarTypeHandler = new TDBTypeHandler<Calendar>() {
+    private static final TDBTypeHandler<Calendar> CalendarHandler = new TDBTypeHandler<Calendar>() {
         @Override public Class<Calendar> supportType() { return Calendar.class; }
         @Override public int jdbcType() { return Types.TIMESTAMP; }
         @Override public String jdbcTypeName() { return "TIMESTAMP"; }
@@ -223,21 +319,21 @@ public class TDB {
             return calendar;
         }
     };
-    private static final TDBTypeHandler<BigDecimal> bigDecimalTypeHandler = new TDBTypeHandler<BigDecimal>() {
+    private static final TDBTypeHandler<BigDecimal> BigDecimalHandler = new TDBTypeHandler<BigDecimal>() {
         @Override public Class<BigDecimal> supportType() { return BigDecimal.class; }
         @Override public int jdbcType() { return Types.DECIMAL; }
         @Override public String jdbcTypeName() { return "DECIMAL"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, BigDecimal value) throws SQLException { prep.setBigDecimal(parameterIndex, value); };
         @Override public BigDecimal getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBigDecimal(columnIndex); }
     };
-    private static final TDBTypeHandler<byte[]> byteArrTypeHandler = new TDBTypeHandler<byte[]>() {
+    private static final TDBTypeHandler<byte[]> byteArrHandler = new TDBTypeHandler<byte[]>() {
         @Override public Class<byte[]> supportType() { return byte[].class; }
         @Override public int jdbcType() { return Types.BLOB; }
         @Override public String jdbcTypeName() { return "BLOB"; }
         @Override public void setParameter(PreparedStatement prep, int parameterIndex, byte[] value) throws SQLException { prep.setBytes(parameterIndex, value); };
         @Override public byte[] getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBytes(columnIndex); }
     };
-    private static final TDBTypeHandler<InputStream> inputstreamTypeHandler = new TDBTypeHandler<InputStream>() {
+    private static final TDBTypeHandler<InputStream> InputstreamHandler = new TDBTypeHandler<InputStream>() {
         @Override public Class<InputStream> supportType() { return InputStream.class; }
         @Override public int jdbcType() { return Types.BLOB; }
         @Override public String jdbcTypeName() { return "BLOB"; }
@@ -343,31 +439,31 @@ public class TDB {
     }
 
     static{
-        allTypeHandlers.put(boolean.class, bitTypeHandler);
-        allTypeHandlers.put(Boolean.class, bitTypeHandler);
-        allTypeHandlers.put(byte.class, byteTypeHandler);
-        allTypeHandlers.put(Byte.class, byteTypeHandler);
-        allTypeHandlers.put(short.class, shortTypeHandler);
-        allTypeHandlers.put(Short.class, shortTypeHandler);
-        allTypeHandlers.put(int.class, intTypeHandler);
-        allTypeHandlers.put(Integer.class, intTypeHandler);
-        allTypeHandlers.put(long.class, longTypeHandler);
-        allTypeHandlers.put(Long.class, longTypeHandler);
-        allTypeHandlers.put(float.class, floatTypeHandler);
-        allTypeHandlers.put(Float.class, floatTypeHandler);
-        allTypeHandlers.put(double.class, doubleTypeHandler);
-        allTypeHandlers.put(Double.class, doubleTypeHandler);
-        allTypeHandlers.put(char.class, charTypeHandler);
-        allTypeHandlers.put(Character.class, charTypeHandler);
-        allTypeHandlers.put(String.class, stringTypeHandler);
-        allTypeHandlers.put(StringBuilder.class, stringbuilderTypeHandler);
-        allTypeHandlers.put(StringBuffer.class, stringbufferTypeHandler);
-        allTypeHandlers.put(Timestamp.class, timestampTypeHandler);
-        allTypeHandlers.put(Date.class, dateTypeHandler);
-        allTypeHandlers.put(Calendar.class, calendarTypeHandler);
-        allTypeHandlers.put(BigDecimal.class, bigDecimalTypeHandler);
-        allTypeHandlers.put(byte[].class, byteArrTypeHandler);
-        allTypeHandlers.put(InputStream.class, inputstreamTypeHandler);
+        allTypeHandlers.put(boolean.class, booleanHandler);
+        allTypeHandlers.put(Boolean.class, BooleanHandler);
+        allTypeHandlers.put(byte.class, byteHandler);
+        allTypeHandlers.put(Byte.class, ByteHandler);
+        allTypeHandlers.put(short.class, shortHandler);
+        allTypeHandlers.put(Short.class, ShortHandler);
+        allTypeHandlers.put(int.class, intHandler);
+        allTypeHandlers.put(Integer.class, IntegerHandler);
+        allTypeHandlers.put(long.class, longHandler);
+        allTypeHandlers.put(Long.class, LongHandler);
+        allTypeHandlers.put(float.class, floatHandler);
+        allTypeHandlers.put(Float.class, FloatHandler);
+        allTypeHandlers.put(double.class, doubleHandler);
+        allTypeHandlers.put(Double.class, DoubleHandler);
+        allTypeHandlers.put(char.class, charHandler);
+        allTypeHandlers.put(Character.class, CharacterHandler);
+        allTypeHandlers.put(String.class, StringHandler);
+        allTypeHandlers.put(StringBuilder.class, StringbuilderHandler);
+        allTypeHandlers.put(StringBuffer.class, StringbufferHandler);
+        allTypeHandlers.put(Timestamp.class, TimestampHandler);
+        allTypeHandlers.put(Date.class, DateHandler);
+        allTypeHandlers.put(Calendar.class, CalendarHandler);
+        allTypeHandlers.put(BigDecimal.class, BigDecimalHandler);
+        allTypeHandlers.put(byte[].class, byteArrHandler);
+        allTypeHandlers.put(InputStream.class, InputstreamHandler);
     }
     
     private boolean printSQL;

@@ -69,7 +69,8 @@ public class TDBTest {
                     + "`id` int(11) not null auto_increment, "
                     + "`col` varchar(255) default null,"
                     + "`json` text ,"
-                    + "`arr` text , "
+                    + "`arr` text ,"
+                    + "`num` integer default null ,"
                     + "primary key (`id`)) "
                     + "engine=innodb default charset=utf8")
                     .execute();
@@ -111,6 +112,7 @@ public class TDBTest {
             String data6 = "6-"+suffix;
             String data7 = "7-"+suffix;
             String data8 = "8-"+suffix;
+            String data9 = "9-"+suffix;
             
             Model model1 = new Model();
             model1.alias = data1;
@@ -185,6 +187,13 @@ public class TDBTest {
             standardCols = Arrays.asList(data7, data8);
             Assert.assertTrue(TCollection.isEqual(standardCols, model8Arr));
             
+            Model model9 = new Model();
+            model9.alias = data9;
+            db.insert(model9).execute();
+            model9 = db.select("select * from model where id=?", model9.id).execute2ModelOne(Model.class);
+            Assert.assertNull(model9.num);
+            Assert.assertTrue(0==db.select("select num from model where id=?", model9.id).execute2BasicOne(int.class));
+            
             counter.dec();
         }
     }
@@ -199,6 +208,7 @@ public class TDBTest {
         String alias;
         JSONObject json;
         JSONArray arr;
+        Integer num;
     }
     
 }

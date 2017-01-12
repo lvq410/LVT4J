@@ -14,7 +14,6 @@ import org.apache.ibatis.type.MappedTypes;
 import org.apache.ibatis.type.TypeHandler;
 
 import com.lvt4j.basic.TDB.TDBTypeHandler;
-import com.lvt4j.basic.TVerify;
 
 @MappedJdbcTypes(value=JdbcType.VARCHAR)
 @MappedTypes(value=JSONArray.class)
@@ -24,10 +23,10 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
     @Override
     public void setParameter(PreparedStatement ps, int i, JSONArray arr,
             JdbcType jdbcType) throws SQLException {
-        if (arr!=null && arr.size()>0) {
-            ps.setString(i, arr.toString());
-        } else {
+        if(arr==null) {
             ps.setNull(i, JdbcType.VARCHAR.ordinal());
+        } else {
+            ps.setString(i, arr.toString());
         }
     }
 
@@ -35,20 +34,23 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
     public JSONArray getResult(ResultSet rs, String columnName)
             throws SQLException {
         String val = rs.getString(columnName);
-        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
+        if(val==null) return null;
+        return JSONArray.fromObject(val);
     }
 
     @Override
     public JSONArray getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
-        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
+        if(val==null) return null;
+        return JSONArray.fromObject(val);
     }
 
     @Override
     public JSONArray getResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String val = cs.getString(columnIndex);
-        return TVerify.strNullOrEmpty(val)?new JSONArray():JSONArray.fromObject(val);
+        if(val==null) return null;
+        return JSONArray.fromObject(val);
     }
 
     //-------------------------------------------------------------------for TDB
@@ -70,12 +72,11 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
     @Override
     public void setParameter(PreparedStatement ps, int i,
             JSONArray arr) throws SQLException {
-        if (arr.size()>0) {
-            ps.setString(i, arr.toString());
-        } else {
+        if(arr==null) {
             ps.setNull(i, Types.NULL);
+        } else {
+            ps.setString(i, arr.toString());
         }
-        
     }
 
 }
