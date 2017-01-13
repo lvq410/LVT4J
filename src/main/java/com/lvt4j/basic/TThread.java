@@ -52,8 +52,8 @@ public class TThread {
             for (E job : list) {
                 try {
                     worker.doJob(job);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    new RuntimeException("Err on run SplitListJob for job:"+job, e).printStackTrace();
                 }
             }
             locker.dec();

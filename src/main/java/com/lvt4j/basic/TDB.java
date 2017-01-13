@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
@@ -341,10 +342,10 @@ public class TDB {
         @Override public InputStream getResult(ResultSet rs, int columnIndex) throws SQLException { return rs.getBinaryStream(columnIndex); }
     };
     
-    private static final Map<Class<?>, TDBTypeHandler<?>> allTypeHandlers = new HashMap<Class<?>, TDBTypeHandler<?>>();
+    private static final Map<Class<?>, TDBTypeHandler<?>> AllTypeHandlers = new HashMap<Class<?>, TDBTypeHandler<?>>();
     
     public static final <E> TDBTypeHandler<?> registerTypeHandler(TDBTypeHandler<E> typeHandler) {
-        return allTypeHandlers.put(typeHandler.supportType(), typeHandler);
+        return AllTypeHandlers.put(typeHandler.supportType(), typeHandler);
     }
     
     private static String tblName(Class<?> cls) {
@@ -354,7 +355,15 @@ public class TDB {
         return table.value();
     }
     
+    /**
+     * 判断一个属性是不是一个可以映射到一个数据库列上<br>
+     * 默认非static,非final,非transient的都会认为是一个列<br>
+     * 除非它被{@link NotCol}所标记
+     * @param field
+     * @return
+     */
     private static boolean isCol(Field field) {
+        if(field.isAnnotationPresent(NotCol.class)) return false;
         int modifiers = field.getModifiers();
         return !Modifier.isStatic(modifiers) &&
                 !Modifier.isFinal(modifiers) &&
@@ -385,7 +394,7 @@ public class TDB {
 
     private static <E> TDBTypeHandler<E> getTypeHandler(Class<E> cls) {
         @SuppressWarnings("unchecked")
-        TDBTypeHandler<E> typeHandler = (TDBTypeHandler<E>) allTypeHandlers.get(cls);
+        TDBTypeHandler<E> typeHandler = (TDBTypeHandler<E>) AllTypeHandlers.get(cls);
         if(typeHandler==null) throw new RuntimeException("不支持的java类型<" + cls + ">");
         return typeHandler;
     }
@@ -439,31 +448,31 @@ public class TDB {
     }
 
     static{
-        allTypeHandlers.put(boolean.class, booleanHandler);
-        allTypeHandlers.put(Boolean.class, BooleanHandler);
-        allTypeHandlers.put(byte.class, byteHandler);
-        allTypeHandlers.put(Byte.class, ByteHandler);
-        allTypeHandlers.put(short.class, shortHandler);
-        allTypeHandlers.put(Short.class, ShortHandler);
-        allTypeHandlers.put(int.class, intHandler);
-        allTypeHandlers.put(Integer.class, IntegerHandler);
-        allTypeHandlers.put(long.class, longHandler);
-        allTypeHandlers.put(Long.class, LongHandler);
-        allTypeHandlers.put(float.class, floatHandler);
-        allTypeHandlers.put(Float.class, FloatHandler);
-        allTypeHandlers.put(double.class, doubleHandler);
-        allTypeHandlers.put(Double.class, DoubleHandler);
-        allTypeHandlers.put(char.class, charHandler);
-        allTypeHandlers.put(Character.class, CharacterHandler);
-        allTypeHandlers.put(String.class, StringHandler);
-        allTypeHandlers.put(StringBuilder.class, StringbuilderHandler);
-        allTypeHandlers.put(StringBuffer.class, StringbufferHandler);
-        allTypeHandlers.put(Timestamp.class, TimestampHandler);
-        allTypeHandlers.put(Date.class, DateHandler);
-        allTypeHandlers.put(Calendar.class, CalendarHandler);
-        allTypeHandlers.put(BigDecimal.class, BigDecimalHandler);
-        allTypeHandlers.put(byte[].class, byteArrHandler);
-        allTypeHandlers.put(InputStream.class, InputstreamHandler);
+        AllTypeHandlers.put(boolean.class, booleanHandler);
+        AllTypeHandlers.put(Boolean.class, BooleanHandler);
+        AllTypeHandlers.put(byte.class, byteHandler);
+        AllTypeHandlers.put(Byte.class, ByteHandler);
+        AllTypeHandlers.put(short.class, shortHandler);
+        AllTypeHandlers.put(Short.class, ShortHandler);
+        AllTypeHandlers.put(int.class, intHandler);
+        AllTypeHandlers.put(Integer.class, IntegerHandler);
+        AllTypeHandlers.put(long.class, longHandler);
+        AllTypeHandlers.put(Long.class, LongHandler);
+        AllTypeHandlers.put(float.class, floatHandler);
+        AllTypeHandlers.put(Float.class, FloatHandler);
+        AllTypeHandlers.put(double.class, doubleHandler);
+        AllTypeHandlers.put(Double.class, DoubleHandler);
+        AllTypeHandlers.put(char.class, charHandler);
+        AllTypeHandlers.put(Character.class, CharacterHandler);
+        AllTypeHandlers.put(String.class, StringHandler);
+        AllTypeHandlers.put(StringBuilder.class, StringbuilderHandler);
+        AllTypeHandlers.put(StringBuffer.class, StringbufferHandler);
+        AllTypeHandlers.put(Timestamp.class, TimestampHandler);
+        AllTypeHandlers.put(Date.class, DateHandler);
+        AllTypeHandlers.put(Calendar.class, CalendarHandler);
+        AllTypeHandlers.put(BigDecimal.class, BigDecimalHandler);
+        AllTypeHandlers.put(byte[].class, byteArrHandler);
+        AllTypeHandlers.put(InputStream.class, InputstreamHandler);
     }
     
     private boolean printSQL;
@@ -648,21 +657,12 @@ public class TDB {
         
         public void execute() {
             Class<?> modelCls = model.getClass();
-            List<Field> fields = new LinkedList<Field>();
-            Field autoIdField = null;
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            List<Field> fields = modelRegister.colFields;
+            Field autoIdField = modelRegister.autoIdField;
             List<Object> valueS = new LinkedList<Object>();
             StringBuilder sql = new StringBuilder("insert into "+tblName(modelCls)+"(");
-            for (Field field : TReflect.allField(modelCls)) {
-                if (!isCol(field))continue;
-                field.setAccessible(true);
-                fields.add(field);
-                sql.append(colName(field)).append(',');
-                if(!isAutoId(field)) continue;
-                if(autoIdField!=null)
-                    throw new RuntimeException("类["+modelCls+"]下自增主键"
-                            + "设置了两个(最多只能设置一个)!");
-                autoIdField = field;
-            }
+            for (Field field : fields) sql.append(colName(field)).append(',');
             clearEndComma(sql).append(") values (");
             for (Field field: fields) {
                 sql.append("?,");
@@ -715,12 +715,6 @@ public class TDB {
          * @throws SQLException 
          */
         public <E> List<E> execute2Model(Class<E> modelCls) {
-            Map<String, Field> fieldS = new HashMap<String, Field>();
-            for (Field field : TReflect.allField(modelCls)) {
-                if (!isCol(field))continue;
-                field.setAccessible(true);
-                fieldS.put(colName(field), field);
-            }
             List<E> rst = new LinkedList<E>();
             pringSQL(sql);
             RuntimeException ex = null;
@@ -736,11 +730,12 @@ public class TDB {
                 for (int i = 0; i < colCount; i++) {
                     colS[i] = metaData.getColumnLabel(i+1);
                 }
+                ModelRegister modelRegister = ModelRegister.get(modelCls);
                 while (rs.next()) {
                     E obj = TReflect.newInstance(modelCls);
                     for (int i = 0; i < colS.length; i++) {
                         String col = colS[i];
-                        Field field = fieldS.get(col);
+                        Field field = modelRegister.colFieldsMap.get(col);
                         if(field==null) continue;
                         field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
                     }
@@ -769,22 +764,17 @@ public class TDB {
                 setValues(prep, argS);
                 rs = prep.executeQuery();
                 if(!rs.next()) return null;
-                Map<String, Field> fieldS = new HashMap<String, Field>();
-                for (Field field : TReflect.allField(modelCls)) {
-                    if (!isCol(field))continue;
-                    field.setAccessible(true);
-                    fieldS.put(colName(field), field);
-                }
                 ResultSetMetaData metaData = rs.getMetaData();
                 int colCount = metaData.getColumnCount();
                 String[] colS = new String[colCount];
                 for (int i = 0; i < colCount; i++) {
                     colS[i] = metaData.getColumnLabel(i+1);
                 }
+                ModelRegister modelRegister = ModelRegister.get(modelCls);
                 E obj = TReflect.newInstance(modelCls);
                 for (int i = 0; i < colS.length; i++) {
                     String col = colS[i];
-                    Field field = fieldS.get(col);
+                    Field field = modelRegister.colFieldsMap.get(col);
                     if(field==null) continue;
                     field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
                 }
@@ -1104,6 +1094,57 @@ public class TDB {
     
     
     /**
+     * 已注册的模型类
+     * @author lichenxi
+     */
+    private static class ModelRegister {
+        
+        private static final Map<Class<?>, ModelRegister> RegisteredModels = new ConcurrentHashMap<Class<?>, ModelRegister>();
+        
+        private Map<String, Field> colFieldsMap;
+        
+        private List<Field> colFields;
+        
+        private Field autoIdField;
+        
+        private ModelRegister() {}
+        
+        private static ModelRegister get(Class<?> cls){
+            ModelRegister modelRegister = RegisteredModels.get(cls);
+            if(modelRegister!=null) return modelRegister;
+            synchronized (RegisteredModels) {
+                modelRegister = RegisteredModels.get(cls);
+                if(modelRegister!=null) return modelRegister;
+                registerModelClass(cls);
+                return RegisteredModels.get(cls);
+            }
+        }
+        
+        private static void registerModelClass(Class<?> cls) {
+            Map<String, Field> colFieldsMap = new HashMap<String, Field>();
+            List<Field> colFields = new LinkedList<Field>();
+            Field autoIdField = null;
+            for (Field field : TReflect.allField(cls)) {
+                if(!isCol(field)) continue;
+                String colName = colName(field);
+                if(colFieldsMap.containsKey(colName)) continue;
+                field.setAccessible(true);
+                colFieldsMap.put(colName, field);
+                colFields.add(field);
+                if(!isAutoId(field)) continue;
+                if(autoIdField!=null) continue;
+                autoIdField = field;
+            }
+            ModelRegister modelRegister = new ModelRegister();
+            modelRegister.colFieldsMap = colFieldsMap;
+            modelRegister.colFields = colFields;
+            modelRegister.autoIdField = autoIdField;
+            RegisteredModels.put(cls, modelRegister);
+        }
+        
+    }
+    
+    /**
      * 声明于一个映射到数据库表的类上<br>
      * 用于指明该类对应的数据库表的表名<br>
      * 若无此注解,则表名为类的类名
@@ -1127,6 +1168,16 @@ public class TDB {
     public static @interface Col {
         String value() default "";
         boolean autoId() default false;
+    }
+    
+    /**
+     * 声明于一个不想映射到数据库表列的属性上<br>
+     * @author LV
+     * @see {@link TDB#isCol(Field)}
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public static @interface NotCol {
     }
     
     /**

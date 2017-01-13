@@ -18,6 +18,7 @@ import org.junit.Test;
 import com.lvt4j.basic.TCounter;
 import com.lvt4j.basic.TDB;
 import com.lvt4j.basic.TDB.Col;
+import com.lvt4j.basic.TDB.NotCol;
 import com.lvt4j.basic.TDB.Table;
 import com.lvt4j.mybatis.JSONArrayHandler;
 import com.lvt4j.mybatis.JSONObjectHandler;
@@ -120,6 +121,12 @@ public class TDBTest {
             Assert.assertTrue(model1.id!=null && model1.id>0);
             Assert.assertEquals(data1,
                     db.select("select col from model where col=?", data1).execute2BasicOne(String.class));
+            Assert.assertTrue(1==db.executeSQL("delete from model where id=?", model1.id).execute());
+            db.beginTransaction();
+            int oldId = model1.id;
+            db.insert(model1).execute();
+            Assert.assertTrue(oldId==model1.id);
+            db.endTransaction();
             
             db.executeSQL("delete from model where col=?", data1).execute();
             Assert.assertFalse(
@@ -209,6 +216,8 @@ public class TDBTest {
         JSONObject json;
         JSONArray arr;
         Integer num;
+        @NotCol
+        String notcol;
     }
     
 }
