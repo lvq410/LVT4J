@@ -37,12 +37,12 @@ public class THashBucket {
     }
     
     public byte[] serialize() {
-        return TDataConvert.bitS2ByteS(bits);
+        return TBaseDataConvert.bitS2ByteS(bits);
     }
     
     public static THashBucket deserialize(byte[] bytes) {
         THashBucket hashBucket = new THashBucket();
-        hashBucket.bits = TDataConvert.byteS2BitS(bytes);
+        hashBucket.bits = TBaseDataConvert.byteS2BitS(bytes);
         return hashBucket;
     }
     

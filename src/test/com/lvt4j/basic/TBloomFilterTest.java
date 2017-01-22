@@ -14,7 +14,7 @@ public class TBloomFilterTest extends TestCase {
     @Test
     public void test() throws Exception {
         TBloomFilter<String> bloomFilter = new TBloomFilter<String>(0.1, 10000);
-        System.out.println(TDataConvert.obj2ByteS(bloomFilter).length);
+        System.out.println(TBaseDataConvert.obj2ByteS(bloomFilter).length);
         int errCount = 0;
         for (int i = 0; i < 10000; i++) {
             String e = String.valueOf(i);
@@ -25,7 +25,7 @@ public class TBloomFilterTest extends TestCase {
             }
         }
         System.out.println("count:"+errCount);
-        System.out.println(TDataConvert.obj2ByteS(bloomFilter).length);
+        System.out.println(TBaseDataConvert.obj2ByteS(bloomFilter).length);
     }
     
 }

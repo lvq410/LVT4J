@@ -14,7 +14,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.lvt4j.basic.TDataConvert;
+import com.lvt4j.basic.TBaseDataConvert;
 import com.lvt4j.basic.TVerify;
 
 /**
@@ -170,7 +170,7 @@ public class TSQLite4Android {
             values.put(key, (Short) value);
         else if (value.getClass() == boolean.class
                 || value.getClass() == Boolean.class)
-            values.put(key, TDataConvert.bit2BitStr((Boolean) value));
+            values.put(key, TBaseDataConvert.bit2BitStr((Boolean) value));
         else if (value.getClass() == Date.class)
             values.put(key, ((Date) value).getTime());
         else if (value.getClass() == String.class)
@@ -201,7 +201,7 @@ public class TSQLite4Android {
                 sqlArgS[i] = String.valueOf(args[i]);
             else if (args[i].getClass() == boolean.class
                     || args[i].getClass() == Boolean.class)
-                sqlArgS[i] = TDataConvert.bit2BitStr((Boolean) args[i]);
+                sqlArgS[i] = TBaseDataConvert.bit2BitStr((Boolean) args[i]);
             else if (args[i].getClass() == Date.class)
                 sqlArgS[i] = String.valueOf(((Date) args[i]).getTime());
             else
@@ -339,7 +339,7 @@ public class TSQLite4Android {
                         else if (fieldS.get(i).getType() == boolean.class
                                 || fieldS.get(i).getType() == Boolean.class)
                             fieldS.get(i).set(obj,
-                                    TDataConvert.bitStr2Bit(cursor.getString(i)));
+                                    TBaseDataConvert.bitStr2Bit(cursor.getString(i)));
                         else if (fieldS.get(i).getType() == Date.class)
                             fieldS.get(i).set(obj, new Date(cursor.getLong(i)));
                         else if (fieldS.get(i).getType() == String.class)

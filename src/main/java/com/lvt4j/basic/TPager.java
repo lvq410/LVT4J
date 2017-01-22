@@ -4,10 +4,9 @@ package com.lvt4j.basic;
 /**
  * 将前端的翻页数据:页码及每页大小转为
  * 数据库limit实际需要的start和size
- * @author lichenxi
+ * @author LV
  */
 public final class TPager {
-    
     private static final int Default_PageNo = 1;
     private static final int Default_PageSize = 10;
     
@@ -73,5 +72,4 @@ public final class TPager {
     public int getSize() {
         return size;
     }
-    
 }

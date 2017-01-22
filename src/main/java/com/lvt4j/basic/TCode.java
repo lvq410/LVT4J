@@ -22,7 +22,7 @@ public class TCode {
             try {
                 md = MessageDigest.getInstance("MD5");
                 md.update(text.getBytes());
-                return TDataConvert.byteS2HexStr(md.digest());
+                return TBaseDataConvert.byteS2HexStr(md.digest());
             } catch (NoSuchAlgorithmException e) {
                 return null;
             }
@@ -36,14 +36,14 @@ public class TCode {
             while ((len = is.read(buff)) > 0)
                 md.update(buff, 0, len);
             is.close();
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
 
         public static String encode(byte[] bytes) {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
                 md.update(bytes);
-                return TDataConvert.byteS2HexStr(md.digest());
+                return TBaseDataConvert.byteS2HexStr(md.digest());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -54,7 +54,7 @@ public class TCode {
         public static String encode(String text) throws Exception {
             MessageDigest md = MessageDigest.getInstance("SHA");
             md.update(text.getBytes());
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
 
         public static String encode(File file) throws Exception {
@@ -65,13 +65,13 @@ public class TCode {
             while ((len = is.read(buff)) > 0)
                 md.update(buff, 0, len);
             is.close();
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
 
         public static String encode(byte[] bytes) throws Exception {
             MessageDigest md = MessageDigest.getInstance("SHA");
             md.update(bytes);
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
     }
 
@@ -79,7 +79,7 @@ public class TCode {
         public static String encode(String text) throws Exception {
             MessageDigest md = MessageDigest.getInstance("SHA1");
             md.update(text.getBytes());
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
 
         public static String encode(File file) throws Exception {
@@ -90,13 +90,13 @@ public class TCode {
             while ((len = is.read(buff)) > 0)
                 md.update(buff, 0, len);
             is.close();
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
 
         public static String encode(byte[] bytes) throws Exception {
             MessageDigest md = MessageDigest.getInstance("SHA1");
             md.update(bytes);
-            return TDataConvert.byteS2HexStr(md.digest());
+            return TBaseDataConvert.byteS2HexStr(md.digest());
         }
     }
 
@@ -115,7 +115,7 @@ public class TCode {
             byte[] byteContent = plainText.getBytes("utf-8");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] result = cipher.doFinal(byteContent);
-            return TDataConvert.byteS2HexStr(result);
+            return TBaseDataConvert.byteS2HexStr(result);
         }
 
         public static String encrypt(String plainText, String password)
@@ -131,7 +131,7 @@ public class TCode {
             byte[] byteContent = plainText.getBytes("utf-8");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] result = cipher.doFinal(byteContent);
-            return TDataConvert.byteS2HexStr(result);
+            return TBaseDataConvert.byteS2HexStr(result);
         }
 
         public static String decrypt4Android(String cipherText, String password)
@@ -147,7 +147,7 @@ public class TCode {
             SecretKeySpec key = new SecretKeySpec(enCodeFormat, "AES");
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] result = cipher.doFinal(TDataConvert
+            byte[] result = cipher.doFinal(TBaseDataConvert
                     .hexStr2ByteS(cipherText));
             return new String(result);
         }
@@ -163,7 +163,7 @@ public class TCode {
             SecretKeySpec key = new SecretKeySpec(enCodeFormat, "AES");
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] result = cipher.doFinal(TDataConvert
+            byte[] result = cipher.doFinal(TBaseDataConvert
                     .hexStr2ByteS(cipherText));
             return new String(result);
         }

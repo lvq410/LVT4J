@@ -1009,7 +1009,6 @@ public class TDB {
         @Override public Connection getConnection(String username, String password) throws SQLException { return null; }
         
         private class TDBDataSourceConnection implements Connection {
-            
             TDBDataSource dataSource;
             Connection conn;
 
@@ -1093,12 +1092,8 @@ public class TDB {
     }
     
     
-    /**
-     * 已注册的模型类
-     * @author lichenxi
-     */
+    /** 已注册的模型类 */
     private static class ModelRegister {
-        
         private static final Map<Class<?>, ModelRegister> RegisteredModels = new ConcurrentHashMap<Class<?>, ModelRegister>();
         
         private Map<String, Field> colFieldsMap;

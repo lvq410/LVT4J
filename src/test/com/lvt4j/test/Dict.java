@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.lvt4j.basic.TCode;
-import com.lvt4j.basic.TDataConvert;
+import com.lvt4j.basic.TBaseDataConvert;
 import com.lvt4j.basic.TFile;
 
 public class Dict {

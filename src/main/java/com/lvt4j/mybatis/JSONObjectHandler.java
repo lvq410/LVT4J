@@ -13,6 +13,7 @@ import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 import org.apache.ibatis.type.TypeHandler;
 
+import com.lvt4j.basic.TVerify;
 import com.lvt4j.basic.TDB.TDBTypeHandler;
 
 @MappedJdbcTypes(value=JdbcType.VARCHAR)
@@ -34,14 +35,14 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
     public JSONObject getResult(ResultSet rs, String columnName)
             throws SQLException {
         String val = rs.getString(columnName);
-        if(val==null) return null;
+        if(TVerify.strNullOrEmpty(val)) return null;
         return JSONObject.fromObject(val);
     }
     
     @Override
     public JSONObject getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
-        if(val==null) return null;
+        if(TVerify.strNullOrEmpty(val)) return null;
         return JSONObject.fromObject(val);
     }
 
@@ -49,7 +50,7 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
     public JSONObject getResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String val = cs.getString(columnIndex);
-        if(val==null) return null;
+        if(TVerify.strNullOrEmpty(val)) return null;
         return JSONObject.fromObject(val);
     }
 

@@ -17,8 +17,7 @@ public class TTest {
     }
     
     public static void main(String[] args) {
-        JSONObject b = JSONObject.fromObject("{a:null}");
-        System.out.println(b.get("a")==JSONNull.getInstance());
+        System.out.println(TPager.class.getName());
     }
     
 }

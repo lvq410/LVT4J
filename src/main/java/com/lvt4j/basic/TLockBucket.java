@@ -5,10 +5,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 并发锁桶
- * @author lichenxi
+ * @author LV
  */
 public class TLockBucket {
-
     private ReentrantLock[] locks;
     
     public TLockBucket(int concurrentLevel) {
@@ -37,5 +36,4 @@ public class TLockBucket {
         }
         unlock(lockKey);
     }
-    
 }
