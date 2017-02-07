@@ -29,11 +29,12 @@ public class TLockBucket {
     
     public void run(Object lockKey, Runnable runnable) {
         lock(lockKey);
-        try {
+        try{
             runnable.run();
-        } catch (Throwable e) {
-            new RuntimeException("锁桶内执行失败于锁:"+lockKey, e).printStackTrace();
+        }catch(Throwable e){
+           throw new RuntimeException("锁桶内执行失败于锁:"+lockKey, e);
+        }finally{
+            unlock(lockKey);
         }
-        unlock(lockKey);
     }
 }

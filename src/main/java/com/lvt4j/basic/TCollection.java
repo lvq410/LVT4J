@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -14,27 +15,109 @@ import java.util.Set;
  * 集合工具
  * @author LV
  */
-@SuppressWarnings("unchecked")
 public class TCollection {
     
-    public static final <E, F> Map<E, F> cloneMap(Map<E, F> map) {
+    /**
+     * 克隆参数map,浅度克隆<br>
+     * 会使用参数map类的无参构造函数<br>
+     * 出现异常时会抛出运行时异常
+     * @param map
+     * @return 克隆的map
+     */
+    @SuppressWarnings("unchecked")
+    public static final <K, V> Map<K, V> cloneMap(Map<K, V> map) {
         try {
-            Map<E, F> clone = map.getClass().newInstance();
+            Map<K, V> clone = map.getClass().newInstance();
             clone.putAll(map);
             return clone;
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            throw new RuntimeException("复制map["+map+"]失败!", e);
         }
-        return null;
     }
 
-    public static final <E> boolean isEqual(Collection<E> set1,
-            Collection<E> set2) {
-        if (set1==set2) return true;
-        if (set1==null && set2!=null) return false;
-        if (set1!=null && set2==null) return false;
-        if (set1.size() != set2.size()) return false;
-        for (E e : set1) if (!set2.contains(e)) return false;
+    /**
+     * 判断多个集合是否相同<br>
+     * 集合数量小于2时,永真<br>
+     * 不检查集合的类是否相同,只检查集合的元素是否相同
+     * @param collections
+     * @return 参数中的集合是否相同
+     */
+    public static final boolean isEqual(Collection<?>... collections) {
+        if(collections==null || collections.length<2) return true;
+        Collection<?> first = collections[0];
+        for(int i=1; i < collections.length; i++){
+            Collection<?> collection = collections[i];
+            if(first==null && collection!=null) return false;
+            if(first!=null && collection==null) return false;
+            if(first==collection) continue;
+            if (first.size() != collection.size()) return false;
+            for (Object e : first) if (!collection.contains(e)) return false;
+        }
         return true;
+    }
+    
+    /**
+     * 多个集合的并集<br>
+     * 参数若为null当空集合处理
+     * @param collections
+     * @return
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static final Set union(Collection... collections){
+        Set set = new HashSet();
+        if(collections==null) return set;
+        for(Collection collection: collections){
+            if(collection==null) continue;
+            set.addAll(collection);
+        }
+        return set;
+    }
+    
+    /**
+     * 多个集合的交集<br>
+     * 若参数数量小于2,返回空集合<br>
+     * 参数若为null当空集合处理
+     * @param collections
+     * @return
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static final Set intersection(Collection... collections){
+        if(collections==null || collections.length<2) return new HashSet();
+        Set intersection = new HashSet();
+        intersection.addAll(collections[0]);
+        Set tmp = new HashSet();
+        for(int i=1; i < collections.length; i++){
+            Collection collection = collections[i];
+            if(collection==null || collection.isEmpty()) return new HashSet();
+            for(Object e: collection){
+                if(!intersection.contains(e)) continue;
+                tmp.add(e);
+            }
+            intersection.clear();
+            intersection.addAll(tmp);
+            tmp.clear();
+        }
+        return intersection;
+    }
+    
+    /**
+     * 计算第一个集合与其后所有集合的差集<br>
+     * 若参数数量小于1,返回空集合
+     * @param collections
+     * @return
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static final Set diff(Collection... collections){
+        if(collections==null || collections.length==0) return new HashSet();
+        Set diff = new HashSet();
+        diff.addAll(collections[0]);
+        for(int i=1; i < collections.length; i++){
+            Collection collection = collections[i];
+            if(collection==null) continue;
+            for(Object e: collection)
+                if(diff.contains(e)) diff.remove(e);
+        }
+        return diff;
     }
     
     /**
@@ -45,7 +128,6 @@ public class TCollection {
      * TAutoMap.get('someKey').doSomeThing();
      */
     public static class TAutoMap<K, V> implements Map<K, V>, Serializable{
-        
         private static final long serialVersionUID = 1L;
         
         private Map<K, V> map;
@@ -70,6 +152,7 @@ public class TCollection {
         }
         
         @Override
+        @SuppressWarnings("unchecked")
         public V get(Object key) {
             V val = map.get(key);
             if (val!=null) return val;
@@ -93,9 +176,7 @@ public class TCollection {
         @Override public String toString() { return map.toString(); }
         
         public interface ValueBuilder<K, V> extends Serializable {
-            
             V build(K key);
-            
         }
     }
     
@@ -105,7 +186,6 @@ public class TCollection {
      * 则使用ValueBuilder.build不断创建值并加入,直到大小到达该位置
      */
     public static class TAutoList<E> implements List<E>, Serializable{
-
         private static final long serialVersionUID = 1L;
 
         private List<E> list;
@@ -194,11 +274,8 @@ public class TCollection {
         }
         
         public interface ValueBuilder<E> extends Serializable{
-            
             E build(int idx);
-            
         }
-        
     }
     
 }
