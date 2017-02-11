@@ -1,6 +1,5 @@
 package com.lvt4j.basic;
 
-import lombok.NonNull;
 
 /**
  *
@@ -24,15 +23,15 @@ public class THashBucket {
      * @param obj
      * @return true表示不存在，false表存在
      */
-    public boolean add(@NonNull Object obj) {
-        int pos = obj.hashCode()%bits.length;
+    public boolean add(Object obj) {
+        int pos = Math.abs(obj.hashCode()%bits.length);
         if(bits[pos]) return false;
         bits[pos] = true;
         return true;
     }
     
-    public boolean contains(@NonNull Object obj) {
-        int pos = obj.hashCode()%bits.length;
+    public boolean contains(Object obj) {
+        int pos = Math.abs(obj.hashCode()%bits.length);
         return bits[pos];
     }
     
