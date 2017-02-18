@@ -62,16 +62,20 @@ public class JsonResult extends HashMap<String, Object> {
     }
 
     private static List<String> stack(Throwable e) {
+        return stack(new LinkedList<String>(), e);
+    }
+    private static List<String> stack(List<String> stacks, Throwable e) {
+        if(e==null) return stacks;
         StackTraceElement[] stackTraceElements = e.getStackTrace();
-        if(stackTraceElements==null) return null;
-        List<String> stacks = new LinkedList<String>();
+        if(stackTraceElements==null) return stacks;
         String message = e.getMessage();
         if(!TVerify.strNullOrEmpty(message)) stacks.add(message);
         for (int i = 0; i < stackTraceElements.length; i++) {
             stacks.add(stackTraceElements[i].toString());
         }
-        return stacks;
+        return stack(stacks, e.getCause());
     }
+    
     
     public JsonResult dataPut(Object key, Object val) {
         Map<Object, Object> data = dataGet();
