@@ -58,6 +58,7 @@ public class TCounter {
         isNeedNotify = true;
         while (this.num!=num) {
             synchronized (this) {
+                if(this.num==num) break;
                 try {
                     if(timeout<=-1) {
                         wait();
@@ -68,6 +69,13 @@ public class TCounter {
             }
         }
         isNeedNotify = false;
+    }
+    /**
+     * 一直等待直到指定数值
+     * @param num 指定数值
+     */
+    public void waitUntil(long num) {
+        waitUntil(num, -1);
     }
     
     @Override

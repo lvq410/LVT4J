@@ -1,14 +1,8 @@
 package com.lvt4j.google;
 
 import java.lang.reflect.Type;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,7 +13,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.lvt4j.basic.TPager;
 import com.lvt4j.basic.TTypeAdapter.TypeAdapter;
 import com.lvt4j.extend.typeadapter.TypeAdapterRegister;
 
@@ -28,22 +21,9 @@ import com.lvt4j.extend.typeadapter.TypeAdapterRegister;
  * @author LV
  */
 public class GsonSupport {
-    /** 类型转换默认支持的类型 */
-    private static Class<?>[] DefSupportClses = {
-        Date.class,TPager.class,JSONObject.class,JSONArray.class,String[].class,
-        int[].class,int[][].class,long[].class,long[][].class,double[].class,double[][].class
-    };
-    
-    /** 此方法弥补gson没有集合对象转换的功能 */
-    public static <E> List<E> gsonArray(Gson gson, String[] jsonArr, Class<E> beanClass) {
-        List<E> list = new LinkedList<E>();
-        for (String json : jsonArr)
-            list.add(gson.fromJson(json, beanClass));
-        return list;
-    }
     
     /** 类型转换支持的类型(基于{@link com.lvt4j.basic.TTypeAdapter TTypeAdapter}) */
-    private Class<?>[] supportClses = DefSupportClses;
+    private Class<?>[] supportClses;
     /** 设置类型转换支持的类型(基于{@link com.lvt4j.basic.TTypeAdapter TTypeAdapter}) */
     public void setSupportClses(Class<?>... supportClses) {
         this.supportClses = supportClses;

@@ -348,7 +348,8 @@ public class TDB {
         return AllTypeHandlers.put(typeHandler.supportType(), typeHandler);
     }
     
-    private static String tblName(Class<?> cls) {
+    /** 类对应的数据表名 */
+    public static String tblName(Class<?> cls) {
         Table table = cls.getAnnotation(Table.class);
         if(table==null || TVerify.strNullOrEmpty(table.value()))
             return cls.getSimpleName();
@@ -362,7 +363,7 @@ public class TDB {
      * @param field
      * @return
      */
-    private static boolean isCol(Field field) {
+    public static boolean isCol(Field field) {
         if(field.isAnnotationPresent(NotCol.class)) return false;
         int modifiers = field.getModifiers();
         return !Modifier.isStatic(modifiers) &&
@@ -376,7 +377,9 @@ public class TDB {
         return col.autoId();
     }
     
-    private static String colName(Field field) {
+    /** 类属性对应的数据列名 */
+    public static String colName(Field field) {
+        if(!isCol(field)) return null;
         Col col = field.getAnnotation(Col.class);
         if(col==null || TVerify.strNullOrEmpty(col.value()))
             return field.getName();
@@ -756,6 +759,7 @@ public class TDB {
          * @return 查询结果为空时返回null
          */
         public <E> E execute2ModelOne(Class<E> modelCls) {
+            pringSQL(sql);
             RuntimeException ex = null;
             PreparedStatement prep = null;
             ResultSet rs = null;

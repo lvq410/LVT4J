@@ -3,22 +3,13 @@ package com.lvt4j.spring;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorSupport;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONNull;
-import net.sf.json.JSONObject;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.http.HttpHeaders;
@@ -33,7 +24,6 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.AbstractJsonpResponseBodyAdvice;
 
-import com.lvt4j.basic.TPager;
 import com.lvt4j.basic.TTypeAdapter.TypeAdapter;
 import com.lvt4j.extend.typeadapter.TypeAdapterRegister;
 
@@ -47,13 +37,9 @@ import com.lvt4j.extend.typeadapter.TypeAdapterRegister;
  * @author LV
  */
 @ControllerAdvice
-public class ControllerConfig extends AbstractJsonpResponseBodyAdvice implements PropertyEditorRegistrar{
+public class ControllerConfig extends AbstractJsonpResponseBodyAdvice
+    implements PropertyEditorRegistrar{
 
-    /** 数据绑定默认支持的数据类型 */
-    private static final Class<?>[] DefPropertyEditorSupportClses = {
-        Date.class,TPager.class,JSONObject.class,JSONArray.class,String[].class,
-        int[].class,int[][].class,long[].class,long[][].class,double[].class,double[][].class};
-    
     /** 父类的构造函数里配置jsonp的回调函数参数名 */
     public ControllerConfig() {
         super("callback", "jsoncallback", "jsonpcallback");
@@ -96,7 +82,7 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice implements
     }
 
     /** 数据绑定支持的类型(基于{@link com.lvt4j.basic.TTypeAdapter TTypeAdapter}) */
-    private Class<?>[] propertyEditorSupportClses = DefPropertyEditorSupportClses;
+    private Class<?>[] propertyEditorSupportClses;
     private PropertyEditorSupport[] propertyEditorSupports;
     /**
      * 设置数据绑定支持的类型<br>
@@ -125,6 +111,7 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice implements
 
     @Override
     public void registerCustomEditors(PropertyEditorRegistry registry) {
+        if(propertyEditorSupportClses==null) return;
         loadPropertySupports();
         for (int i = 0; i < propertyEditorSupportClses.length; i++) {
             registry.registerCustomEditor(propertyEditorSupportClses[i], propertyEditorSupports[i]);
@@ -149,46 +136,6 @@ public class ControllerConfig extends AbstractJsonpResponseBodyAdvice implements
                 };
             }
         }
-    }
-
-    
-    /**
-     * 使用BeanWrapper将JSONArray转为具体bean的数组<br>
-     * 属性转换使用所有已注册在该ControllerConfig里的PropertyEditor<br>
-     * 以回避一个spring的bug
-     * @param jsonArray
-     * @param beanClass
-     * @return
-     */
-    public <E> List<E> jsonArray2BeanList(JSONArray jsonArray, Class<E> beanClass) {
-        List<E> list = new LinkedList<E>();
-        if(jsonArray==null || jsonArray.isEmpty()) return list;
-        for(int i = 0; i < jsonArray.size(); i++){
-            JSONObject beanJson = jsonArray.optJSONObject(i);
-            list.add(jsonObject2Bean(beanJson, beanClass));
-        }
-        return list;
-    }
-    
-    /**
-     * 使用BeanWrapper将JSONObject转为具体bean对象<br>
-     * 属性转换使用所有已注册在该ControllerConfig里的PropertyEditor<br>
-     * @param jsonObject
-     * @param beanClass
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public <E> E jsonObject2Bean(JSONObject jsonObject, Class<E> beanClass) {
-        if(jsonObject==null || jsonObject.isNullObject()) return null;
-        BeanWrapperImpl beanWrapper = new BeanWrapperImpl(BeanUtils.instantiate(beanClass));
-        registerCustomEditors(beanWrapper);
-        for(Object key : jsonObject.keySet()){
-            Object val = jsonObject.get(key.toString());
-            if(val==JSONNull.getInstance()) continue;
-            if(val==null) continue;
-            beanWrapper.setPropertyValue(key.toString(), val.toString());
-        }
-        return (E) beanWrapper.getWrappedInstance();
     }
     
 }

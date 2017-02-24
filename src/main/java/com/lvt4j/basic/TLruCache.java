@@ -6,44 +6,31 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 /**
- *
+ * 近期最少使用缓存器
  * @author LV
- *
  */
 public class TLruCache<K, V> {
 
-    /**
-     * The flag represents remove all entries in the cache.
-     */
-    private static final int REMOVE_ALL = -1;
+    /** 缓存存储的map */
+    private final LruHashMap<K, V> map;
 
-    private static final int DEFAULT_CAPACITY = 10;
-
-    private final Map<K, V> map;
-
-    private final int maxMemorySize;
-
-    private int memorySize;
-
-    public TLruCache() {
-        this(DEFAULT_CAPACITY);
-    }
-
+    /** 最大容量 */
+    private final int capacity;
+    
+    /** 使用默认容量10创建缓存器 */
+    public TLruCache() {this(10);}
+    /** 使用指定容量创建缓存器 */
     public TLruCache(int capacity) {
-        if (capacity <= 0) {
-            throw new IllegalArgumentException("capacity <= 0");
-        }
+        if (capacity<=0) throw new IllegalArgumentException("capacity <= 0");
         this.map = new LruHashMap<K, V>(capacity);
-        maxMemorySize = capacity * 1024 * 1024;
+        this.capacity = capacity;
     }
 
     public final V get(K key) {
         Objects.requireNonNull(key, "key == null");
         synchronized (this) {
             V value = map.get(key);
-            if (value != null) {
-                return value;
-            }
+            if(value!=null) return value;
         }
         return null;
     }
@@ -54,89 +41,35 @@ public class TLruCache<K, V> {
         V previous;
         synchronized (this) {
             previous = map.put(key, value);
-            memorySize += getValueSize(value);
-            if (previous != null) {
-                memorySize -= getValueSize(previous);
-            }
-            trimToSize(maxMemorySize);
+            trimToSize(capacity);
         }
         return previous;
     }
 
     public final V remove(K key) {
         Objects.requireNonNull(key, "key == null");
-        V previous;
         synchronized (this) {
-            previous = map.remove(key);
-            if (previous != null) {
-                memorySize -= getValueSize(previous);
-            }
+            return map.remove(key);
         }
-        return previous;
     }
 
     public synchronized final void clear() {
-        trimToSize(REMOVE_ALL);
+        trimToSize(0);
     }
 
-    public synchronized final int getMaxMemorySize() {
-        return maxMemorySize;
+    public int getCapacity() {
+        return capacity;
+    }
+    public synchronized final int getSize() {
+        return map.size();
     }
 
-    public synchronized final int getMemorySize() {
-        return memorySize;
-    }
-
-    /**
-     * Returns a copy of the current contents of the cache.
-     */
-    public synchronized final Map<K, V> snapshot() {
-        return new LinkedHashMap<K, V>(map);
-    }
-
-    /**
-     * Returns the class name.
-     * <p>
-     * This method should be overridden to debug exactly.
-     *
-     * @return class name.
-     */
-    protected String getClassName() {
-        return TLruCache.class.getName();
-    }
-
-    /**
-     * Returns the size of the entry.
-     * <p>
-     * The default implementation returns 1 so that max size is the maximum number of entries.
-     * <p>
-     * <em>Note:</em> This method should be overridden if you control memory size correctly.
-     *
-     * @param value value
-     * @return the size of the entry.
-     */
-    protected int getValueSize(V value) {
-        return 1;
-    }
-
-    /**
-     * Remove the eldest entries.
-     * <p>
-     * <em>Note:</em> This method has to be called in synchronized block.
-     *
-     * @param maxSize max size
-     */
-    private void trimToSize(int maxSize) {
+    /** 若大小超过指定大小,移除最久未用数据,调整大小到指定大小内 */
+    private void trimToSize(int size) {
         while (true) {
-            if (memorySize <= maxSize || map.isEmpty()) {
-                break;
-            }
-            if (memorySize < 0 || (map.isEmpty() && memorySize != 0)) {
-                throw new IllegalStateException(getClassName() + ".getValueSize() is reporting inconsistent results");
-            }
+            if(map.size()<=size || map.isEmpty()) break;
             Map.Entry<K, V> toRemove = map.entrySet().iterator().next();
             map.remove(toRemove.getKey());
-            memorySize -= getValueSize(toRemove.getValue());
         }
     }
 
@@ -144,33 +77,26 @@ public class TLruCache<K, V> {
     public synchronized final String toString() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<K, V> entry : map.entrySet()) {
-            sb.append(entry.getKey())
-                    .append('=')
-                    .append(entry.getValue())
-                    .append(",");
+            sb.append(entry.getKey()).append('=')
+                    .append(entry.getValue()).append(",");
         }
-        sb.append("maxMemory=")
-                .append(maxMemorySize)
-                .append(",")
-                .append("memorySize=")
-                .append(memorySize);
+        sb.append("capacity=").append(capacity).append(",")
+            .append("size=").append(map.size());
         return sb.toString();
     }
-}
-final class LruHashMap<K, V> extends LinkedHashMap<K, V> {
-    
-    private static final long serialVersionUID = 1L;
-    
-    private final int capacity;
-    
-    public LruHashMap(int capacity) {
-        super(capacity, 0.75f, true);
-        this.capacity = capacity;
+    private class LruHashMap<KK, VV> extends LinkedHashMap<KK, VV> {
+        private static final long serialVersionUID = 1L;
+        
+        private final int capacity;
+        
+        public LruHashMap(int capacity) {
+            super(capacity, 0.75f, true);
+            this.capacity = capacity;
+        }
+        
+        @Override
+        protected boolean removeEldestEntry(Entry<KK, VV> entry) {
+            return size() > capacity;
+        }
     }
-    
-    @Override
-    protected boolean removeEldestEntry(Entry<K, V> entry) {
-        return size() > capacity;
-    }
-    
 }
