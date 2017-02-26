@@ -76,20 +76,31 @@ public class JsonResult extends HashMap<String, Object> {
         return stack(stacks, e.getCause());
     }
     
+    public void data(Object data) {
+        put("data", data);
+    }
+    
+    public Object data() {
+        return get("data");
+    }
     
     public JsonResult dataPut(Object key, Object val) {
-        Map<Object, Object> data = dataGet();
+        Map<Object, Object> data = mapDataGet();
         data.put(key, val);
         return this;
     }
     
     public JsonResult dataPutAll(Map<?, ?> datas) {
-        dataGet().putAll(datas);
+        mapDataGet().putAll(datas);
         return this;
     }
     
+    public Object dataGet(Object key) {
+        return mapDataGet().get(key);
+    }
+    
     @SuppressWarnings("unchecked")
-    private Map<Object, Object> dataGet() {
+    private Map<Object, Object> mapDataGet() {
         Object rawData = get("data");
         if(rawData instanceof Map) return (Map<Object, Object>) rawData;
         if (rawData==null) {
