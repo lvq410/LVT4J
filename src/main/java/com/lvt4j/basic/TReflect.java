@@ -17,40 +17,6 @@ import java.util.Map.Entry;
 public class TReflect {
     
     /**
-     * 将一个对象中的属性值赋值给另一个对象中属性名相同类型也相同 且修饰也相同的属性
-     */
-    public static final void obj2Obj(Object fromObj, Object toObj) {
-        Class<?> fromClass = fromObj.getClass();
-        Class<?> toClass = toObj.getClass();
-        Field[] toFields = toClass.getDeclaredFields();
-        for (int i = 0; i < toFields.length; i++) {
-            Field toField = toFields[i];
-            String fieldName = toField.getName();
-            Field fromField;
-            try {
-                fromField = fromClass.getDeclaredField(fieldName);
-            } catch (Exception e) {
-                continue;
-            }
-            int fieldModifiers = toField.getModifiers();
-            if (fromField.getModifiers() != fieldModifiers)
-                continue;
-            // final || static continue
-            if (Modifier.isFinal(fieldModifiers)
-                    || Modifier.isStatic(fieldModifiers))
-                continue;
-            fromField.setAccessible(true);
-            toField.setAccessible(true);
-            try {
-                toField.set(toObj, fromField.get(fromObj));
-            } catch (Exception e) {
-                TLog.e("On field<" + fromField + "> to field <" + toField + ">",
-                        e);
-            }
-        }
-    }
-
-    /**
      * 获得一个类包括其父类在内所有属性
      * @param cls
      * @return
@@ -107,6 +73,30 @@ public class TReflect {
             cls = cls==Object.class ? null : cls.getSuperclass();
         }
         return null;
+    }
+
+    /**
+     * 将一个对象中的属性值赋值给另一个对象中属性名相同类型也相同 且修饰也相同的属性<br>
+     * 遇到各种异常忽略
+     */
+    public static final <E> E obj2Obj(Object fromObj, E toObj) {
+        Class<?> fromClass = fromObj.getClass();
+        List<Field> toFields = allField(toObj.getClass());
+        for(Field toField : toFields){
+            Field fromField = field(fromClass, toField.getName());
+            if(fromField==null) continue;
+            
+            int fieldModifiers = toField.getModifiers();
+            if(fromField.getModifiers()!=fieldModifiers) continue;
+            if(Modifier.isFinal(fieldModifiers)) continue;
+            if(Modifier.isStatic(fieldModifiers)) continue;
+            fromField.setAccessible(true);
+            toField.setAccessible(true);
+            try {
+                toField.set(toObj, fromField.get(fromObj));
+            } catch (Exception ignore) {}
+        }
+        return toObj;
     }
 
     /**

@@ -26,9 +26,7 @@ public class TStream {
             ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
             GZIPInputStream is = new GZIPInputStream(bais);
             int b;
-            while ((b = is.read()) != -1) {
-                baos.write(b);
-            }
+            while ((b = is.read()) != -1) baos.write(b);
             is.close();
             return baos.toByteArray();
         } catch (Exception e) {
@@ -41,9 +39,7 @@ public class TStream {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buf = new byte[1024];
             int len;
-            while ((len=in.read(buf))!=-1) {
-                baos.write(buf, 0, len);
-            }
+            while ((len=in.read(buf))!=-1) baos.write(buf, 0, len);
             in.close();
             return baos.toByteArray();
         } catch (Exception e) {
