@@ -27,6 +27,7 @@ public class TThread {
             int toIndex = (i+1)*subSize;
             if(i==threadNum-1) toIndex += list.size()%threadNum;
             List<E> subList = list.subList(i*subSize, toIndex);
+            locker.inc();
             new SplitListJob<E>(locker, subList, worker).start();
         }
         locker.waitUntil(0);
@@ -42,7 +43,6 @@ public class TThread {
         private SplitListJobWorker<E> worker;
         
         private SplitListJob(TCounter locker, List<E> list, SplitListJobWorker<E> worker) {
-            locker.inc();
             this.locker = locker;
             this.list = list;
             this.worker = worker;

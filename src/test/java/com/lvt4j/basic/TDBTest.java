@@ -1,13 +1,10 @@
 package com.lvt4j.basic;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
-import net.sf.json.JSONArray;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -15,8 +12,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.lvt4j.basic.TCounter;
-import com.lvt4j.basic.TDB;
 import com.lvt4j.basic.TDB.Col;
 import com.lvt4j.basic.TDB.NotCol;
 import com.lvt4j.basic.TDB.Table;
@@ -24,16 +19,14 @@ import com.lvt4j.mybatis.JSONArrayHandler;
 import com.lvt4j.mybatis.JSONObjectHandler;
 
 /**
- *
  * @author LV
- *
  */
 public class TDBTest {
 
-    final String driverClassName = "com.mysql.cj.jdbc.Driver";
-    final String url = "jdbc:mysql://nc008x.corp.youdao.com:3306/lichenxidb?characterEncoding=utf8&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai";
-    final String user = "eadonline4nb";
-    final String pwd = "new1ife4Th1sAugust";
+    final String driverClassName = "org.h2.Driver";
+    final String url = "jdbc:h2:mem:test";
+    final String user = "LV";
+    final String pwd = "tdbtest";
     
     TDB myDB;
     TDB externalDB;
@@ -41,6 +34,7 @@ public class TDBTest {
     @Before
     public void before() {
         myDB = new TDB(driverClassName, url, user, pwd);
+        myDB.openPrintSQL();
         
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName(driverClassName);
@@ -57,6 +51,7 @@ public class TDBTest {
         dataSource.setValidationQuery("select 1");
         dataSource.setTestOnBorrow(true);
         externalDB = new TDB(dataSource);
+        externalDB.openPrintSQL();
     }
     
     @Test
@@ -65,158 +60,140 @@ public class TDBTest {
         TDB.registerTypeHandler(new JSONObjectHandler());
         
         for (TDB db : new TDB[]{myDB, externalDB}) {
-            db.executeSQL("drop table if exists `model`").execute();
-            db.executeSQL("create table `model`("
-                    + "`id` int(11) not null auto_increment, "
-                    + "`col` varchar(255) default null,"
-                    + "`json` text ,"
-                    + "`arr` text ,"
-                    + "`num` integer default null ,"
-                    + "primary key (`id`)) "
-                    + "engine=innodb default charset=utf8")
-                    .execute();
+            db.executeSQL("drop table if exists husband").execute();
+            db.executeSQL("create table husband("
+                    +"id int(11) not null auto_increment,"
+                    +"name varchar(255) not null,"
+                    +"salary int(11) default null,"
+                    +"wifeName varchar(255),"
+                    +"primary key (id,name)"
+                    +")engine=innodb default charset=utf8").execute();
+            db.executeSQL("drop table if exists wife").execute();
+            db.executeSQL("create table wife("
+                    +"id int(11) not null auto_increment,"
+                    +"name varchar(255) not null,"
+                    +"des varchar(255),"
+                    +"json varchar(255),"
+                    +"primary key (id,name)"
+                    +")engine=innodb default charset=utf8").execute();
             
             Assert.assertTrue(0==
-                    db.select("select count(*) from model").execute2BasicOne(int.class));
+                    db.select("select count(*) from husband").execute2BasicOne(int.class));
+            Assert.assertTrue(0==
+                    db.select("select count(*) from wife").execute2BasicOne(int.class));
             
-            TCounter counter = new TCounter();
-            for (int i = 0; i < 100; i++) {
-                TestJobThread job = new TestJobThread();
-                job.db = db;
-                job.counter = counter;
-                counter.inc();
-                job.start();
-            }
+            int cycleNum = 1;
+            List<Integer> jobs = new ArrayList<Integer>(100);
+            for(int i=0; i<cycleNum; i++) jobs.add(i);
+            TThread.splitListJob(jobs, 10, job->{
+                String name = String.valueOf(job);
+                
+                Husband husband0 = new Husband();
+                husband0.name = name;
+                husband0.wifeName = name;
+                Assert.assertTrue(1==db.insert(husband0).execute());
+                int husband0OldId = husband0.id;
+                Assert.assertTrue(husband0.id!=null && husband0.id>0);
+                Assert.assertEquals(name,
+                        db.select("select name from husband where id=?", husband0.id).execute2BasicOne(String.class));
+                Assert.assertTrue(1==db.executeSQL("delete from husband where id=?", husband0.id).execute());
+                Assert.assertFalse(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(1==db.insert(husband0).execute());
+                Assert.assertTrue(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(husband0OldId==husband0.id);
+                Assert.assertNull(db.select("select salary from husband where id=?", husband0.salary).execute2BasicOne(Integer.class));
+                Assert.assertTrue(0==db.select("select salary from husband where id=?", husband0.id).execute2BasicOne(int.class));
+                husband0.salary = 1000000;
+                Assert.assertTrue(1==db.update(husband0).execute());
+                Assert.assertTrue(1000000==db.select("select salary from husband where id=?", husband0.id).execute2BasicOne(int.class));
+                
+                Wife wife0 = new Wife();
+                wife0.name = name;
+                wife0.json = JSONObject.fromObject("{'name':'"+name+"'}");
+                Assert.assertTrue(1==db.insert(wife0).execute());
+                Assert.assertNull(db.select("select des from wife where id=?", wife0.id).execute2BasicOne(String.class));
+                Assert.assertEquals(name,
+                        db.select("select json from wife where id=?", wife0.id).execute2BasicOne(JSONObject.class).getString("name"));
+                wife0.json = null;
+                wife0.des = name;
+                Assert.assertTrue(1==db.update(wife0).execute());
+                Assert.assertNull(db.select("select json from wife where id=?", wife0.id).execute2Basic(JSONObject.class).get(0));
+                Assert.assertEquals(name,
+                        db.select("select des from wife where id=?", wife0.id).execute2BasicOne(String.class));
+                Assert.assertEquals(wife0,
+                        db.select("select * from wife where id=?", wife0.id).execute2ModelOne(Wife.class));
+                
+                Assert.assertNull(husband0.wifeDes);
+                Assert.assertNull(husband0.wifeJson);
+                husband0 = db.select("select H.id,H.name,H.salary,W.name as wifeName,W.des as wifeDes,W.json as wifeJson "
+                        + "from husband H left join wife W on H.wifeName=W.name where H.id=?", husband0.id).execute2Model(Husband.class).get(0);
+                Assert.assertEquals(husband0.wifeDes, wife0.des);
+                Assert.assertEquals(husband0.wifeJson, wife0.json);
+                
+                Assert.assertTrue(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+                db.beginTransaction();
+                Assert.assertTrue(1==db.delete(husband0).execute());
+                Assert.assertTrue(1==db.delete(wife0).execute());
+                Assert.assertFalse(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertFalse(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+                db.rollbackTransaction();
+                Assert.assertTrue(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+                
+                db.beginTransaction();
+                Assert.assertTrue(1==db.delete(husband0).execute());
+                Assert.assertTrue(1==db.delete(wife0).execute());
+                Assert.assertFalse(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertFalse(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+                db.endTransaction();
+                Assert.assertFalse(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertFalse(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(1==db.insert(husband0).execute());
+                Assert.assertTrue(1==db.insert(wife0).execute());
+                Assert.assertTrue(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
+                Assert.assertTrue(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
+            });
             
-            counter.waitUntil(0, -1);
+            int husbandRowCount = db.delete(new Richer()).execute();
+            Assert.assertTrue(husbandRowCount==cycleNum);
+            int wifeRowCount = db.executeSQL("delete from wife").execute();
+            Assert.assertTrue(husbandRowCount==wifeRowCount);
             
-            int rowCount = db.executeSQL("delete from model").execute();
-            Assert.assertTrue(rowCount>0);
-            db.executeSQL("drop table `model`").execute();
+            db.executeSQL("drop table husband").execute();
+            db.executeSQL("drop table wife").execute();
         }
     }
     
-    class TestJobThread extends Thread {
-        
-        TDB db;
-        String suffix = UUID.randomUUID().toString();
-        TCounter counter;
-        
-        @Override
-        public void run() {
-            String data1 = "1-"+suffix;
-            String data2 = "2-"+suffix;
-            String data3 = "3-"+suffix;
-            String data4 = "4-"+suffix;
-            String data5 = "5-"+suffix;
-            String data6 = "6-"+suffix;
-            String data7 = "7-"+suffix;
-            String data8 = "8-"+suffix;
-            String data9 = "9-"+suffix;
-            
-            Model model1 = new Model();
-            model1.alias = data1;
-            db.insert(model1).execute();
-            Assert.assertTrue(model1.id!=null && model1.id>0);
-            Assert.assertEquals(data1,
-                    db.select("select col from model where col=?", data1).execute2BasicOne(String.class));
-            Assert.assertTrue(1==db.executeSQL("delete from model where id=?", model1.id).execute());
-            db.beginTransaction();
-            int oldId = model1.id;
-            db.insert(model1).execute();
-            Assert.assertTrue(oldId==model1.id);
-            db.endTransaction();
-            
-            db.executeSQL("delete from model where col=?", data1).execute();
-            Assert.assertFalse(
-                    db.select("select count(*)<>0 from model where col=?", data1).execute2BasicOne(boolean.class));
-            
-            db.beginTransaction();
-            Model model2 = new Model();
-            model2.alias = data2;
-            db.insert(model2).execute();
-            Assert.assertEquals(data2,
-                    db.select("select col from model where col=?", data2).execute2BasicOne(String.class));
-            model2.id = (Integer) db.select("select id from model where col=?", data2).execute2MapOne(int.class).get("id");
-            
-            db.rollbackTransaction();
-            Assert.assertFalse(
-                    db.select("select count(*)<>0 from model where id=?", model2.id).execute2BasicOne(boolean.class));
-            
-            Model model3 = new Model();
-            model3.alias = data3;
-            db.insert(model3).execute();
-            model3.id = db.select("select * from model where col=?", data3).execute2ModelOne(Model.class).id;
-            Assert.assertTrue(model3.id>model2.id);
-            db.endTransaction();
-            Assert.assertTrue(
-                    db.select("select count(*)<>0 from model where id=?", model3.id).execute2BasicOne(boolean.class));
-            
-            db.executeSQL("update model set col=? where id=?", data4, model3.id).execute();
-            
-            Model model5 = new Model();
-            model5.alias = data5;
-            db.insert(model5).execute();
-            Model model6 = new Model();
-            model6.alias = data6;
-            db.insert(model6).execute();
-            
-            Collection<String> standardCols = Arrays.asList(data4, data5, data6);
-            Assert.assertTrue(
-                    TCollection.isEqual(standardCols,
-                            db.select("select col from model where col like ?", "%"+suffix).execute2Basic(String.class))
-            );
-            
-            List<String> mapRstCols = new LinkedList<String>();
-            for (Map<String, Object> row : db.select("select id,col from model where col like ?", "%"+suffix).execute2Map(int.class, String.class)) {
-                mapRstCols.add((String) row.get("col"));
-            }
-            Assert.assertTrue(TCollection.isEqual(standardCols, mapRstCols));
-            
-            Model model7 = new Model();
-            model7.alias = data7;
-            model7.json = new JSONObject();
-            model7.json.put("data", data7);
-            db.insert(model7).execute();
-            JSONObject model7Json = db.select("select json from model where id=?", model7.id).execute2BasicOne(JSONObject.class);
-            Assert.assertNotNull(model7Json);
-            Assert.assertEquals(data7, model7Json.getString("data"));
-            
-            Model model8 = new Model();
-            model8.alias = data8;
-            model8.arr = new JSONArray();
-            model8.arr.add(data7);
-            model8.arr.add(data8);
-            db.insert(model8).execute();
-            JSONArray model8Arr = db.select("select arr from model where id=?", model8.id).execute2BasicOne(JSONArray.class);
-            Assert.assertNotNull(model8Arr);
-            standardCols = Arrays.asList(data7, data8);
-            Assert.assertTrue(TCollection.isEqual(standardCols, model8Arr));
-            
-            Model model9 = new Model();
-            model9.alias = data9;
-            db.insert(model9).execute();
-            model9 = db.select("select * from model where id=?", model9.id).execute2ModelOne(Model.class);
-            Assert.assertNull(model9.num);
-            Assert.assertTrue(0==db.select("select num from model where id=?", model9.id).execute2BasicOne(int.class));
-            
-            counter.dec();
-        }
-    }
-    
-    static class BaseBean {
-        @Col(autoId=true)
+    @Data
+    static class Person {
+        @Col(autoId=true,id=true,idSeq=0)
         Integer id;
     }
-    @Table("model")
-    static class Model extends BaseBean{
-        @Col("col")
-        String alias;
-        JSONObject json;
-        JSONArray arr;
-        Integer num;
+    @Table("husband")
+    @Data
+    @EqualsAndHashCode(callSuper=true)
+    static class Husband extends Person{
+        @Col(value="name",id=true,idSeq=1)
+        String name;
+        Integer salary;
+        String wifeName;
+        
         @NotCol
-        String notcol;
+        String wifeDes;
+        transient JSONObject wifeJson;
     }
+    @Table("wife")
+    @Data
+    @EqualsAndHashCode(callSuper=true)
+    static class Wife extends Person{
+        @Col(value="name",id=true,idSeq=1)
+        String name;
+        String des;
+        JSONObject json;
+    }
+    
+    @Table("husband")
+    static class Richer{}
     
 }
