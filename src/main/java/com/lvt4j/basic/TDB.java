@@ -429,12 +429,6 @@ public class TDB{
         }
     }
 
-    private static StringBuilder clearEndComma(StringBuilder sql){
-        if (sql.charAt(sql.length() - 1) == ',')
-            sql.deleteCharAt(sql.length() - 1);
-        return sql;
-    }
-
     static{
         AllTypeHandlers.put(boolean.class, booleanHandler);
         AllTypeHandlers.put(Boolean.class, BooleanHandler);
@@ -620,35 +614,56 @@ public class TDB{
     }
     
     
-    public Insert insert(Object obj){return new Insert(obj);}
-    public Delete delete(Object obj) {return new Delete(obj);}
-    public Update update(Object obj){return new Update(obj);}
+    public <E> Insert<E> insert(E model){return new Insert<E>(model);}
+    public <E> Insert<E> insert(Collection<E> models){return new Insert<E>(models);}
+    public Delete delete(Object model) {return new Delete(model);}
+    public Update update(Object model){return new Update(model);}
     public Select select(String sql, Object... args){return new Select(sql, args);}
+    public <E> Get<E> get(E model){return new Get<E>(model);}
     public ExecSQL executeSQL(String sql, Object... args){return new ExecSQL(sql, args);}
 
-    public class Insert{
-        private Object model;
-        private Insert(Object model){this.model=model;}
+    public class Insert<E>{
+        private Class<E> modelCls;
+        private List<E> models = new LinkedList<E>();
+        
+        private Insert(E model){insert(model);}
+        private Insert(Collection<E> models){insert(models);}
+        
+        @SuppressWarnings("unchecked")
+        public Insert<E> insert(E model) {
+            if(modelCls==null) modelCls = (Class<E>)model.getClass();
+            models.add(model);
+            return this;
+        }
+        @SuppressWarnings("unchecked")
+        public Insert<E> insert(Collection<E> models) {
+            if(models.isEmpty()) return this;
+            for(E model : models){
+                if(modelCls==null) modelCls = (Class<E>)model.getClass();
+                if(modelCls!=model.getClass())
+                    throw new RuntimeException("待插入的Model["+modelCls
+                            +"]与新添加的Model["+model.getClass()+"]类型不符!");
+                this.models.add(model);
+            }
+            return this;
+        }
         
         /** 返回影响的行数 */
         public int execute(){
-            Class<?> modelCls = model.getClass();
             ModelRegister modelRegister = ModelRegister.get(modelCls);
             Collection<Field> fields = modelRegister.colFieldsMap.values();
             Field autoIdField = modelRegister.autoIdField;
-            List<Object> valueS = new LinkedList<Object>();
             StringBuilder sql = new StringBuilder("insert into `"+tblName(modelCls)+"`(");
-            for(Field field : fields) sql.append('`').append(colName(field)).append('`').append(',');
-            clearEndComma(sql).append(") values (");
-            for(Field field: fields){
-                sql.append("?,");
-                try{
-                    valueS.add(field.get(model));
-                }catch(Throwable ingore){
-                    valueS.add(null);
-                }
+            StringBuilder qClause = new StringBuilder();
+            boolean first = true;
+            for(Field field : fields) {
+                if(!first) sql.append(',');
+                if(!first) qClause.append(',');
+                sql.append('`').append(colName(field)).append('`');
+                qClause.append('?');
+                first = false;
             }
-            clearEndComma(sql).append(");");
+            sql.append(")values(").append(qClause).append(")");
             String sqlStr = sql.toString();
             pringSQL(sqlStr);
             RuntimeException ex = null;
@@ -656,13 +671,25 @@ public class TDB{
             ResultSet rs = null;
             try{
                 prep = getConnection().prepareStatement(sqlStr, Statement.RETURN_GENERATED_KEYS);
-                setValues(prep, valueS.toArray());
-                int rowCount = prep.executeUpdate();
+                List<Object> valueS = new LinkedList<Object>();
+                for(E model : models){
+                    for(Field field : fields)
+                        try{valueS.add(field.get(model));}catch(Exception e){valueS.add(null);}
+                    setValues(prep, valueS.toArray());
+                    prep.addBatch();
+                    valueS.clear();
+                }
+                int[] rowCounts = prep.executeBatch();
+                int rowCount = 0;
+                for(int count : rowCounts)rowCount += count;
                 if(autoIdField==null) return rowCount;
                 try{
                     rs = prep.getGeneratedKeys();
-                    if(rs.next()) autoIdField.set(model,
-                            getTypeHandler(autoIdField.getType()).getResult(rs, 1));
+                    for(E model : models){
+                        if(!rs.next()) continue;
+                        autoIdField.set(model,
+                                getTypeHandler(autoIdField.getType()).getResult(rs, 1));
+                    }
                 }catch(Throwable setAutoIdThrowable){
                     throw new RuntimeException("获取与设置自增ID异常", setAutoIdThrowable);
                 }
@@ -670,11 +697,13 @@ public class TDB{
             }catch(Throwable executeThrowable){
                 ex = appendException(ex, "执行insert异常", executeThrowable);
                 return 0;
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
-        @Override public String toString(){return "insert:"+model;}
+        public void clear() {
+            modelCls = null;
+            models.clear();
+        }
+        @Override public String toString(){return "insert:"+models;}
     }
     public class Delete{
         private Object model;
@@ -712,9 +741,7 @@ public class TDB{
             }catch(Throwable executeThrowable){
                 ex = appendException(ex, "执行delete异常", executeThrowable);
                 return 0;
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
     }
     public class Update{
@@ -761,9 +788,7 @@ public class TDB{
             }catch(Throwable executeThrowable){
                 ex = appendException(ex, "执行update异常", executeThrowable);
                 return 0;
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
     }
     public class Select{
@@ -797,21 +822,19 @@ public class TDB{
                 for(int i=0; i<colCount; i++) colS[i] = metaData.getColumnLabel(i+1);
                 ModelRegister modelRegister = ModelRegister.get(modelCls);
                 while (rs.next()){
-                    E obj = TReflect.newInstance(modelCls);
+                    E model = TReflect.newInstance(modelCls);
                     for(int i=0; i<colS.length; i++){
                         String col = colS[i];
                         Field field = modelRegister.getRstField(col);
                         if(field==null) continue;
-                        field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
+                        field.set(model, getTypeHandler(field.getType()).getResult(rs, i+1));
                     }
-                    rst.add(obj);
+                    rst.add(model);
                 }
                 return rst;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2Model()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
         
         /**
@@ -835,19 +858,17 @@ public class TDB{
                 String[] colS = new String[colCount];
                 for(int i=0; i<colCount; i++) colS[i] = metaData.getColumnLabel(i+1);
                 ModelRegister modelRegister = ModelRegister.get(modelCls);
-                E obj = TReflect.newInstance(modelCls);
+                E model = TReflect.newInstance(modelCls);
                 for(int i=0; i<colS.length; i++){
                     String col = colS[i];
                     Field field = modelRegister.getRstField(col);
                     if(field==null) continue;
-                    field.set(obj, getTypeHandler(field.getType()).getResult(rs, i+1));
+                    field.set(model, getTypeHandler(field.getType()).getResult(rs, i+1));
                 }
-                return obj;
+                return model;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2ModelOne()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
 
         /**
@@ -869,9 +890,7 @@ public class TDB{
                 return rst;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2Basic()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
         
         /**
@@ -892,9 +911,7 @@ public class TDB{
                 return getTypeHandler(basic).getResult(rs, 1);
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2BasicOne()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
         
         /**
@@ -928,9 +945,7 @@ public class TDB{
                 return rst;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2Map()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
         
         /**
@@ -961,11 +976,41 @@ public class TDB{
                 return map;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行select.execute2MapOne()异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, rs);
-            }
+            }finally{executeFinally(ex, prep, rs);}
         }
         @Override public String toString(){return "select:"+sql+". args:"+Arrays.asList(argS);}
+    }
+    public class Get<E>{
+        private Class<E> modelCls;
+        private String sql;
+        private Object[] argS;
+        
+        @SuppressWarnings("unchecked")
+        private Get(E model){
+            modelCls = (Class<E>)model.getClass();
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            StringBuilder sql = new StringBuilder("select * from `").append(tblName(modelCls)).append('`');
+            List<Object> args = new LinkedList<Object>();
+            if(!modelRegister.idFields.isEmpty()){
+                sql.append(" where");
+                boolean first = true;
+                for(Field idField : modelRegister.idFields){
+                    sql.append(first?" `":" and `").append(colName(idField)).append("`=?");
+                    Object val = null;
+                    try{val=idField.get(model);}catch(Exception ignore){}
+                    if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
+                    args.add(val);
+                    first = false;
+                }
+            }
+            this.sql = sql.toString();
+            this.argS = args.toArray();
+        }
+        public E execute() {
+            return select(sql, argS).execute2ModelOne(modelCls);
+        }
+        
+        @Override public String toString(){return "get:"+sql+". args:"+Arrays.asList(argS);}
     }
     public class ExecSQL{
         private String sql;
@@ -987,9 +1032,7 @@ public class TDB{
                 return effectRowCount;
             }catch(Throwable executeThrowable){
                 throw ex=appendException(ex, "执行sql异常", executeThrowable);
-            }finally{
-                executeFinally(ex, prep, null);
-            }
+            }finally{executeFinally(ex, prep, null);}
         }
     }
     
@@ -1278,7 +1321,6 @@ public class TDB{
     public static @interface Table{
         String value() default "";
     }
-    
     /**
      * 声明于一个映射到数据库表列的属性上,用于<br>
      * 1.指明该属性对应数据库表列的列名,若无此注解,则属性名即为列名<br>
@@ -1294,7 +1336,6 @@ public class TDB{
         boolean id() default false;
         int idSeq() default 0;
     }
-    
     /**
      * 声明于一个不想映射到数据库表列的属性上<br>
      * @author LV
@@ -1320,5 +1361,4 @@ public class TDB{
         /** 结果集转为java类 */
         public E getResult(ResultSet rs, int columnIndex)throws SQLException;
     }
-    
 }

@@ -1,7 +1,9 @@
 package com.lvt4j.basic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,6 +17,7 @@ import org.junit.Test;
 import com.lvt4j.basic.TDB.Col;
 import com.lvt4j.basic.TDB.NotCol;
 import com.lvt4j.basic.TDB.Table;
+import com.lvt4j.basic.TThread.SplitListJobWorker;
 import com.lvt4j.mybatis.JSONArrayHandler;
 import com.lvt4j.mybatis.JSONObjectHandler;
 
@@ -34,7 +37,6 @@ public class TDBTest {
     @Before
     public void before() {
         myDB = new TDB(driverClassName, url, user, pwd);
-        myDB.openPrintSQL();
         
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName(driverClassName);
@@ -51,7 +53,6 @@ public class TDBTest {
         dataSource.setValidationQuery("select 1");
         dataSource.setTestOnBorrow(true);
         externalDB = new TDB(dataSource);
-        externalDB.openPrintSQL();
     }
     
     @Test
@@ -82,11 +83,11 @@ public class TDBTest {
             Assert.assertTrue(0==
                     db.select("select count(*) from wife").execute2BasicOne(int.class));
             
-            int cycleNum = 1;
+            int cycleNum = 100;
             List<Integer> jobs = new ArrayList<Integer>(100);
             for(int i=0; i<cycleNum; i++) jobs.add(i);
-            TThread.splitListJob(jobs, 10, job->{
-                String name = String.valueOf(job);
+            TThread.splitListJob(jobs, 10, new SplitListJobWorker<Integer>(){@Override public void doJob(Integer job){
+                String name = UUID.randomUUID().toString();
                 
                 Husband husband0 = new Husband();
                 husband0.name = name;
@@ -106,6 +107,7 @@ public class TDBTest {
                 husband0.salary = 1000000;
                 Assert.assertTrue(1==db.update(husband0).execute());
                 Assert.assertTrue(1000000==db.select("select salary from husband where id=?", husband0.id).execute2BasicOne(int.class));
+                Assert.assertEquals(husband0, db.get(husband0).execute());
                 
                 Wife wife0 = new Wife();
                 wife0.name = name;
@@ -153,8 +155,27 @@ public class TDBTest {
                 Assert.assertTrue(1==db.insert(wife0).execute());
                 Assert.assertTrue(db.select("select count(id)<>0 from husband where id=?", husband0.id).execute2BasicOne(boolean.class));
                 Assert.assertTrue(db.select("select count(id)<>0 from wife where id=?", wife0.id).execute2BasicOne(boolean.class));
-            });
             
+                Husband husband1 = new Husband();
+                husband1.name = name+1;
+                Husband husband2 = new Husband();
+                husband2.name = name+2;
+                Assert.assertTrue(2==db.insert(husband1).insert(husband2).execute());
+                Assert.assertTrue(husband1.id!=husband2.id);
+                Assert.assertTrue(1==db.delete(husband1).execute());
+                Assert.assertTrue(1==db.delete(husband2).execute());
+                Assert.assertNull(db.get(husband1).execute());
+                int oldHusband1Id = husband1.id;
+                int oldHusband2Id = husband2.id;
+                husband1.id = null;
+                List<Husband> husbands = Arrays.asList(husband1, husband2);
+                Assert.assertTrue(2==db.insert(husbands).execute());
+                Assert.assertTrue(oldHusband1Id!=husband1.id);
+                Assert.assertTrue(oldHusband2Id==husband2.id);
+                Assert.assertEquals(husband1, db.get(husband1).execute());
+                Assert.assertTrue(1==db.delete(husband1).execute());
+                Assert.assertTrue(1==db.delete(husband2).execute());
+            }});
             int husbandRowCount = db.delete(new Richer()).execute();
             Assert.assertTrue(husbandRowCount==cycleNum);
             int wifeRowCount = db.executeSQL("delete from wife").execute();
