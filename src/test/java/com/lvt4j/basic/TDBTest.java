@@ -107,6 +107,10 @@ public class TDBTest {
                 husband0.salary = 1000000;
                 Assert.assertTrue(1==db.update(husband0).execute());
                 Assert.assertTrue(1000000==db.select("select salary from husband where id=?", husband0.id).execute2BasicOne(int.class));
+                husband0.salary = 10000000;
+                Assert.assertTrue(1==db.update(husband0, husband0.id, husband0.name).execute());
+                Assert.assertTrue(10000000==db.select("select salary from husband where id=?", husband0.id).execute2BasicOne(int.class));
+                
                 Assert.assertEquals(husband0, db.get(husband0).execute());
                 
                 Wife wife0 = new Wife();
@@ -162,9 +166,12 @@ public class TDBTest {
                 husband2.name = name+2;
                 Assert.assertTrue(2==db.insert(husband1).insert(husband2).execute());
                 Assert.assertTrue(husband1.id!=husband2.id);
+                Assert.assertTrue(db.exist(husband1).execute());
+                Assert.assertTrue(db.exist(Husband.class, husband2.id, husband2.name).execute());
                 Assert.assertTrue(1==db.delete(husband1).execute());
                 Assert.assertTrue(1==db.delete(husband2).execute());
                 Assert.assertNull(db.get(husband1).execute());
+                Assert.assertNull(db.get(Husband.class, husband1.id, husband1.name).execute());
                 int oldHusband1Id = husband1.id;
                 int oldHusband2Id = husband2.id;
                 husband1.id = null;
@@ -174,7 +181,7 @@ public class TDBTest {
                 Assert.assertTrue(oldHusband2Id==husband2.id);
                 Assert.assertEquals(husband1, db.get(husband1).execute());
                 Assert.assertTrue(1==db.delete(husband1).execute());
-                Assert.assertTrue(1==db.delete(husband2).execute());
+                Assert.assertTrue(1==db.delete(Husband.class, husband2.id, husband2.name).execute());
             }});
             int husbandRowCount = db.delete(new Richer()).execute();
             Assert.assertTrue(husbandRowCount==cycleNum);

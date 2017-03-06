@@ -616,10 +616,14 @@ public class TDB{
     
     public <E> Insert<E> insert(E model){return new Insert<E>(model);}
     public <E> Insert<E> insert(Collection<E> models){return new Insert<E>(models);}
-    public Delete delete(Object model) {return new Delete(model);}
-    public Update update(Object model){return new Update(model);}
+    public Delete delete(Object model){return new Delete(model);}
+    public Delete delete(Class<?> modelCls, Object... idVals){return new Delete(modelCls, idVals);}
+    public Update update(Object model, Object... idVals){return new Update(model, idVals);}
     public Select select(String sql, Object... args){return new Select(sql, args);}
     public <E> Get<E> get(E model){return new Get<E>(model);}
+    public <E> Get<E> get(Class<E> modelCls, Object... idVals){return new Get<E>(modelCls, idVals);}
+    public Exist exist(Object model){return new Exist(model);}
+    public Exist exist(Class<?> modelCls, Object... idVals){return new Exist(modelCls, idVals);}
     public ExecSQL executeSQL(String sql, Object... args){return new ExecSQL(sql, args);}
 
     public class Insert<E>{
@@ -630,13 +634,13 @@ public class TDB{
         private Insert(Collection<E> models){insert(models);}
         
         @SuppressWarnings("unchecked")
-        public Insert<E> insert(E model) {
+        public Insert<E> insert(E model){
             if(modelCls==null) modelCls = (Class<E>)model.getClass();
             models.add(model);
             return this;
         }
         @SuppressWarnings("unchecked")
-        public Insert<E> insert(Collection<E> models) {
+        public Insert<E> insert(Collection<E> models){
             if(models.isEmpty()) return this;
             for(E model : models){
                 if(modelCls==null) modelCls = (Class<E>)model.getClass();
@@ -656,7 +660,7 @@ public class TDB{
             StringBuilder sql = new StringBuilder("insert into `"+tblName(modelCls)+"`(");
             StringBuilder qClause = new StringBuilder();
             boolean first = true;
-            for(Field field : fields) {
+            for(Field field : fields){
                 if(!first) sql.append(',');
                 if(!first) qClause.append(',');
                 sql.append('`').append(colName(field)).append('`');
@@ -699,18 +703,16 @@ public class TDB{
                 return 0;
             }finally{executeFinally(ex, prep, rs);}
         }
-        public void clear() {
+        public void clear(){
             modelCls = null;
             models.clear();
         }
         @Override public String toString(){return "insert:"+models;}
     }
     public class Delete{
-        private Object model;
-        private Delete(Object model){this.model=model;}
-        
-        /** 返回影响的行数 */
-        public int execute(){
+        private String sql;
+        private Object[] argS;
+        private Delete(Object model){
             Class<?> modelCls = model.getClass();
             ModelRegister modelRegister = ModelRegister.get(modelCls);
             List<Object> args = new LinkedList<Object>();
@@ -729,34 +731,59 @@ public class TDB{
                 }
             }
             sql.append(';');
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            this.sql = sql.toString();
+            argS = args.toArray();
+        }
+        private Delete(Class<?> modelCls, Object[] idVals){
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            List<Object> args = new LinkedList<Object>();
+            StringBuilder sql = new StringBuilder("delete from `").append(tblName(modelCls)).append('`');
+            if(!modelRegister.idFields.isEmpty()){
+                if(modelRegister.idFields.size()!=idVals.length)
+                    throw new RuntimeException("Model["+modelCls+"]的主键数量["
+                            +modelRegister.idFields.size()+"]与指定的主键值数量["+idVals.length+"]不符!");
+                sql.append(" where");
+                int i = 0;
+                for(Field idField : modelRegister.idFields){
+                    sql.append(i==0?" `":" and `").append(colName(idField)).append("`=?");
+                    Object val = idVals[i];
+                    if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
+                    args.add(val);
+                    i++;
+                }
+            }
+            sql.append(';');
+            this.sql = sql.toString();
+            argS = args.toArray();
+        }
+        
+        /** 返回影响的行数 */
+        public int execute(){
+            pringSQL(sql);
             RuntimeException ex = null;
             PreparedStatement prep = null;
             ResultSet rs = null;
             try{
-                prep = getConnection().prepareStatement(sqlStr);
-                setValues(prep, args.toArray());
+                prep = getConnection().prepareStatement(sql);
+                setValues(prep, argS);
                 return prep.executeUpdate();
             }catch(Throwable executeThrowable){
                 ex = appendException(ex, "执行delete异常", executeThrowable);
                 return 0;
             }finally{executeFinally(ex, prep, rs);}
         }
+        @Override public String toString(){return "delete:"+sql+". args:"+Arrays.asList(argS);}
     }
     public class Update{
-        private Object model;
-        private Update(Object model){this.model=model;}
-        
-        /** 返回影响的行数 */
-        public int execute(){
+        private String sql;
+        private Object[] argS;
+        private Update(Object model, Object[] idVals){
             Class<?> modelCls = model.getClass();
             ModelRegister modelRegister = ModelRegister.get(modelCls);
             List<Object> args = new LinkedList<Object>();
             StringBuilder sql = new StringBuilder("update `").append(tblName(modelCls)).append("` set ");
             boolean first = true;
             for(Field colField : modelRegister.colFieldsMap.values()){
-                if(modelRegister.idFields.contains(colField)) continue;
                 if(!first) sql.append(',');
                 sql.append('`').append(colName(colField)).append("`=?");
                 try{args.add(colField.get(model));}catch(Exception ignore){}
@@ -764,32 +791,42 @@ public class TDB{
             }
             if(first) throw new RuntimeException("Model["+modelCls+"]没有可更新的列!");
             if(!modelRegister.idFields.isEmpty()){
+                boolean specifyIdVals = idVals!=null && idVals.length>0;
+                if(specifyIdVals && modelRegister.idFields.size()!=idVals.length)
+                    throw new RuntimeException("Model["+modelCls+"]的主键数量["
+                            +modelRegister.idFields.size()+"]与指定的主键值数量["+idVals.length+"]不符!");
                 sql.append(" where");
-                first = true;
+                int i = 0;
                 for(Field idField : modelRegister.idFields){
-                    sql.append(first?" `":" and `").append(colName(idField)).append("`=?");
+                    sql.append(i==0?" `":" and `").append(colName(idField)).append("`=?");
                     Object val = null;
-                    try{val=idField.get(model);}catch(Exception ignore){}
+                    try{val=specifyIdVals?idVals[i]:idField.get(model);}catch(Exception ignore){}
                     if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
                     args.add(val);
-                    first = false;
+                    i++;
                 }
             }
             sql.append(';');
-            String sqlStr = sql.toString();
-            pringSQL(sqlStr);
+            this.sql = sql.toString();
+            argS = args.toArray();
+        }
+        
+        /** 返回影响的行数 */
+        public int execute(){
+            pringSQL(sql);
             RuntimeException ex = null;
             PreparedStatement prep = null;
             ResultSet rs = null;
             try{
-                prep = getConnection().prepareStatement(sqlStr);
-                setValues(prep, args.toArray());
+                prep = getConnection().prepareStatement(sql);
+                setValues(prep, argS);
                 return prep.executeUpdate();
             }catch(Throwable executeThrowable){
                 ex = appendException(ex, "执行update异常", executeThrowable);
                 return 0;
             }finally{executeFinally(ex, prep, rs);}
         }
+        @Override public String toString(){return "update:"+sql+". args:"+Arrays.asList(argS);}
     }
     public class Select{
         private String sql;
@@ -984,7 +1021,6 @@ public class TDB{
         private Class<E> modelCls;
         private String sql;
         private Object[] argS;
-        
         @SuppressWarnings("unchecked")
         private Get(E model){
             modelCls = (Class<E>)model.getClass();
@@ -1006,11 +1042,83 @@ public class TDB{
             this.sql = sql.toString();
             this.argS = args.toArray();
         }
-        public E execute() {
+        private Get(Class<E> modelCls, Object[] idVals){
+            this.modelCls = modelCls;
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            StringBuilder sql = new StringBuilder("select * from `").append(tblName(modelCls)).append('`');
+            List<Object> args = new LinkedList<Object>();
+            if(!modelRegister.idFields.isEmpty()){
+                if(modelRegister.idFields.size()!=idVals.length)
+                    throw new RuntimeException("Model["+modelCls+"]的主键数量["
+                            +modelRegister.idFields.size()+"]与指定的主键值数量["+idVals.length+"]不符!");
+                sql.append(" where");
+                int i = 0;
+                for(Field idField : modelRegister.idFields){
+                    sql.append(i==0?" `":" and `").append(colName(idField)).append("`=?");
+                    Object val = idVals[i];
+                    if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
+                    args.add(val);
+                    i++;
+                }
+            }
+            this.sql = sql.toString();
+            this.argS = args.toArray();
+        }
+        public E execute(){
             return select(sql, argS).execute2ModelOne(modelCls);
         }
-        
         @Override public String toString(){return "get:"+sql+". args:"+Arrays.asList(argS);}
+    }
+    public class Exist{
+        private Class<?> modelCls;
+        private String sql;
+        private Object[] argS;
+        private Exist(Object model){
+            modelCls = (Class<?>)model.getClass();
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            StringBuilder sql = new StringBuilder("select count(*)<>0 from `").append(tblName(modelCls)).append('`');
+            List<Object> args = new LinkedList<Object>();
+            if(!modelRegister.idFields.isEmpty()){
+                sql.append(" where");
+                boolean first = true;
+                for(Field idField : modelRegister.idFields){
+                    sql.append(first?" `":" and `").append(colName(idField)).append("`=?");
+                    Object val = null;
+                    try{val=idField.get(model);}catch(Exception ignore){}
+                    if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
+                    args.add(val);
+                    first = false;
+                }
+            }
+            this.sql = sql.toString();
+            this.argS = args.toArray();
+        }
+        private Exist(Class<?> modelCls, Object[] idVals){
+            this.modelCls = modelCls;
+            ModelRegister modelRegister = ModelRegister.get(modelCls);
+            StringBuilder sql = new StringBuilder("select count(*)<>0 from `").append(tblName(modelCls)).append('`');
+            List<Object> args = new LinkedList<Object>();
+            if(!modelRegister.idFields.isEmpty()){
+                if(modelRegister.idFields.size()!=idVals.length)
+                    throw new RuntimeException("Model["+modelCls+"]的主键数量["
+                            +modelRegister.idFields.size()+"]与指定的主键值数量["+idVals.length+"]不符!");
+                sql.append(" where");
+                int i = 0;
+                for(Field idField : modelRegister.idFields){
+                    sql.append(i==0?" `":" and `").append(colName(idField)).append("`=?");
+                    Object val = idVals[i];
+                    if(val==null) throw new RuntimeException("Model["+modelCls+"]的主键["+colName(idField)+"]值不能为null!");
+                    args.add(val);
+                    i++;
+                }
+            }
+            this.sql = sql.toString();
+            this.argS = args.toArray();
+        }
+        public boolean execute(){
+            return new Select(sql, argS).execute2BasicOne(boolean.class);
+        }
+        @Override public String toString(){return "exist:"+sql+". args:"+Arrays.asList(argS);}
     }
     public class ExecSQL{
         private String sql;
@@ -1034,6 +1142,7 @@ public class TDB{
                 throw ex=appendException(ex, "执行sql异常", executeThrowable);
             }finally{executeFinally(ex, prep, null);}
         }
+        @Override public String toString(){return "execSql:"+sql+". args:"+Arrays.asList(argS);}
     }
     
 
@@ -1303,7 +1412,7 @@ public class TDB{
             return col.autoId();
         }
     
-        private Field getRstField(String colName) {
+        private Field getRstField(String colName){
             Field colField = rstFieldsMap.get(colName);
             if(colField!=null) return colField;
             return rstFieldsIgnoreCaseMap.get(colName.toLowerCase());

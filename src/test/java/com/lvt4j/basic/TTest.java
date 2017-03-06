@@ -1,8 +1,8 @@
 package com.lvt4j.basic;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 
 import org.junit.Test;
 
@@ -17,10 +17,13 @@ public class TTest {
     public void test() {
     }
     
-    public static void main(String[] args) {
-        List<String> a = new LinkedList<String>();
-        ParameterizedType parameterizedType = (ParameterizedType)a.getClass().getGenericSuperclass();
-        System.out.println(parameterizedType.getActualTypeArguments()[0]);
+    public static void main(String[] args) throws Exception {
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("D:/Program Files/apache-jmeter-2.12/rbac-test/userId.txt")));
+        for (int i = 0; i < 10000; i++) {
+            writer.write("user"+i);
+            writer.newLine();
+        }
+        writer.close();
     }
     
 }
