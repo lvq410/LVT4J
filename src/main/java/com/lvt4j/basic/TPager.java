@@ -72,4 +72,15 @@ public final class TPager {
     public int getSize() {
         return size;
     }
+    
+    /** 即{@link #start}+{@link size} */
+    public int getEnd() {
+        return start+size;
+    }
+    
+    /** 转为sql用" limit {@link #start}, {@link size}"格式 */
+    public String toLimit() {
+        return "limit "+start+","+size;
+    }
+    
 }

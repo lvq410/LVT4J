@@ -3,7 +3,6 @@ package com.lvt4j.basic;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -118,66 +117,6 @@ public class TCollection {
                 if(diff.contains(e)) diff.remove(e);
         }
         return diff;
-    }
-    
-    /**
-     * 自动填充map<br>
-     * 当调用get方法时,若不包含该key<br>
-     * 则使用构造函数的ValueBuilder.build创建值并插入<br>
-     * 以此来实现链式api而不会出现空指针异常,如:<br>
-     * TAutoMap.get('someKey').doSomeThing();
-     */
-    public static class TAutoMap<K, V> implements Map<K, V>, Serializable{
-        private static final long serialVersionUID = 1L;
-        
-        private Map<K, V> map;
-        private ValueBuilder<K, V> valueBuilder;
-        
-        /**
-         * 没有指定map的实现,默认用hashmap
-         * @param valueBuilder 值构建器
-         */
-        public TAutoMap(ValueBuilder<K, V> valueBuilder) {
-            this(new HashMap<K, V>(), valueBuilder);
-        }
-        
-        /**
-         * 指定map的实现
-         * @param map
-         * @param valueBuilder
-         */
-        public TAutoMap(Map<K, V> map, ValueBuilder<K, V> valueBuilder) {
-            this.map = map;
-            this.valueBuilder = valueBuilder;
-        }
-        
-        @Override
-        @SuppressWarnings("unchecked")
-        public V get(Object key) {
-            V val = map.get(key);
-            if (val!=null) return val;
-            val = valueBuilder.build((K) key);
-            map.put((K) key, val);
-            return val;
-        }
-    
-        @Override public int size() { return map.size();}
-        @Override public boolean isEmpty() { return map.isEmpty();}
-        @Override public boolean containsKey(Object key) { return map.containsKey(key); }
-        @Override public boolean containsValue(Object value) { return map.containsValue(value); }
-        @Override public V put(K key, V value) { return map.put(key, value); }
-        @Override public V remove(Object key) { return map.remove(key); }
-        @Override public void putAll(Map<? extends K, ? extends V> m) { map.putAll(m); }
-        @Override public void clear() { map.clear(); }
-        @Override public Set<K> keySet() { return map.keySet(); }
-        @Override public Collection<V> values() { return map.values(); }
-        @Override public Set<Entry<K, V>> entrySet() { return map.entrySet(); }
-        @Override public int hashCode() { return map.hashCode(); }
-        @Override public String toString() { return map.toString(); }
-        
-        public interface ValueBuilder<K, V> extends Serializable {
-            V build(K key);
-        }
     }
     
     /**

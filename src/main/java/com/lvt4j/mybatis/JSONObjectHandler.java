@@ -20,6 +20,9 @@ import com.lvt4j.basic.TDB.TDBTypeHandler;
 @MappedTypes(value=JSONObject.class)
 public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler<JSONObject> {
 
+    /** 字符串反序列化为json对象时,若原字符串非空且不是json形式:false抛出异常,true(默认)返回空json对象 */
+    private boolean ignoreNoJson = true;
+    
     //---------------------------------------------------------------for mybatis
     @Override
     public void setParameter(PreparedStatement ps, int i, JSONObject json,
@@ -36,14 +39,24 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
             throws SQLException {
         String val = rs.getString(columnName);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONObject.fromObject(val);
+        try{
+            return JSONObject.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONObject();
+            else throw e;
+        }
     }
     
     @Override
     public JSONObject getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONObject.fromObject(val);
+        try{
+            return JSONObject.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONObject();
+            else throw e;
+        }
     }
 
     @Override
@@ -51,7 +64,12 @@ public class JSONObjectHandler implements TypeHandler<JSONObject>,TDBTypeHandler
             throws SQLException {
         String val = cs.getString(columnIndex);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONObject.fromObject(val);
+        try{
+            return JSONObject.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONObject();
+            else throw e;
+        }
     }
 
     //-------------------------------------------------------------------for TDB

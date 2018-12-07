@@ -20,6 +20,9 @@ import com.lvt4j.basic.TDB.TDBTypeHandler;
 @MappedTypes(value=JSONArray.class)
 public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<JSONArray> {
 
+    /** 字符串反序列化为json对象时,若原字符串非空且不是json形式:false抛出异常,true(默认)返回空json对象 */
+    private boolean ignoreNoJson = true;
+    
     //---------------------------------------------------------------for mybatis
     @Override
     public void setParameter(PreparedStatement ps, int i, JSONArray arr,
@@ -36,14 +39,24 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
             throws SQLException {
         String val = rs.getString(columnName);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONArray.fromObject(val);
+        try{
+            return JSONArray.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONArray();
+            else throw e;
+        }
     }
 
     @Override
     public JSONArray getResult(ResultSet rs, int columnIndex) throws SQLException {
         String val = rs.getString(columnIndex);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONArray.fromObject(val);
+        try{
+            return JSONArray.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONArray();
+            else throw e;
+        }
     }
 
     @Override
@@ -51,7 +64,12 @@ public class JSONArrayHandler implements TypeHandler<JSONArray>,TDBTypeHandler<J
             throws SQLException {
         String val = cs.getString(columnIndex);
         if(TVerify.strNullOrEmpty(val)) return null;
-        return JSONArray.fromObject(val);
+        try{
+            return JSONArray.fromObject(val);
+        }catch(Exception e){
+            if(ignoreNoJson) return new JSONArray();
+            else throw e;
+        }
     }
 
     //-------------------------------------------------------------------for TDB

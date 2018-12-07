@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
@@ -65,7 +66,9 @@ public class GsonSupport {
                     public Object deserialize(JsonElement json, Type typeOfT,
                             JsonDeserializationContext context)
                             throws JsonParseException {
-                        return typeAdapter.change(json.getAsString());
+                        if(json instanceof JsonPrimitive) return typeAdapter.change(json.getAsString());
+                        else if(json instanceof JsonNull) return typeAdapter.change(null);
+                        else return typeAdapter.change(json.toString());
                     }
                 };
             }
