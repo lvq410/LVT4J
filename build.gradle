@@ -2,7 +2,10 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 
 sourceCompatibility = 1.8
-version = '2.0.7'
+
+group = 'com.lvt4j'
+
+version = '2.0.8'
 
 tasks.withType(JavaCompile) {    
     options.encoding = 'UTF-8'  
@@ -34,6 +37,7 @@ sourceSets {
 }
 
 repositories {
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
     jcenter()
     mavenCentral()
 }
@@ -65,8 +69,8 @@ dependencies {
     compile group: 'org.mybatis', name: 'mybatis-spring', version: '1.3.0'
 }
 
-[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-compileJava {
-    options.bootClasspath = "$System.env.JAVA_HOME/jre/lib/rt.jar"
-    options.bootClasspath += "$File.pathSeparator$System.env.JAVA_HOME/jre/lib/jce.jar"
-}
+//[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+//compileJava {
+//    options.bootClasspath = "$System.env.JAVA_HOME/jre/lib/rt.jar"
+//    options.bootClasspath += "$File.pathSeparator$System.env.JAVA_HOME/jre/lib/jce.jar"
+//}

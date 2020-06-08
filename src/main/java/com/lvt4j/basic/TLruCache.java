@@ -1,9 +1,13 @@
 package com.lvt4j.basic;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * 近期最少使用缓存器
@@ -54,14 +58,25 @@ public class TLruCache<K, V> {
     }
 
     public synchronized final void clear() {
-        trimToSize(0);
+        map.clear();
     }
 
     public int getCapacity() {
         return capacity;
     }
+    
     public synchronized final int getSize() {
         return map.size();
+    }
+    
+    /** 返回key的副本，对于副本的改动不影响缓存的内容 */
+    public synchronized Set<K> keySet() {
+        return new HashSet<>(map.keySet());
+    }
+    
+    /** 返回val的副本，对于副本的改动不影响缓存的内容 */
+    public synchronized Collection<V> values() {
+        return new ArrayList<>(map.values());
     }
 
     /** 若大小超过指定大小,移除最久未用数据,调整大小到指定大小内 */
